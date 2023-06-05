@@ -19,11 +19,18 @@ AMU nurse in charge outside of these times
     - build in unavailability to simulate other demands on time
 does AC need unavailability too?
 
+Constraints on AC capacity may mean pts suitable for SDEC/other pathway end up 
+on AMU - need to simulate some type of timeout after which pt awaiting triage 
+defaults to AMU route
+
 SDEC:
 capacity 14
 weekdays 10:00-00:00
 weekends 10:00-18:00
-stopd accepting new pts 3h before closing time
+stops accepting new pts 3h before closing time
+At closing time pts must be moved to either an AMU or base ward bed.
+Technically there are cases where this can't happen and SDEC can't close on 
+time - how regular and does this matter for the model?
 
 AMU/MTU:
 capacity 52
@@ -74,7 +81,8 @@ class Patient:
         self.amu_patient = False
 
         self.queue_for_triage = 0
-        self.queue_for_bed = 0
+        self.queue_for_amu_bed = 0
+        self.queue_for_sdec_slot = 0
 
     def decide_route(self):
         if random.uniform(0, 1) < self.probability_amu:
@@ -82,7 +90,7 @@ class Patient:
 
 
 # Simulation environment class
-class AMUModel:
+class ACModel:
 
     def __init__(self, run_number):
         self.env = simpy.Environment()
@@ -91,17 +99,19 @@ class AMUModel:
         self.adm_coordinator = simpy.Resource(self.env, 
                                             capacity=G.adm_coordinator_capacity)
         self.amu_bed = simpy.Resource(self.env, capacity=G.amu_capacity)
-        self.sdec_bed = simpy.Resource(self.env, capacity=G.sdec_capacity)
+        self.sdec_slot = simpy.Resource(self.env, capacity=G.sdec_capacity)
 
         self.run_number = run_number
 
         self.mean_queue_time_triage = 0
-        self.mean_queue_time_bed = 0
+        self.mean_queue_time_amu_bed = 0
+        self.mean_queue_time_sdec_slot = 0
 
         self.results_df = pd.DataFrame()
         self.results_df["Patient_ID"] = []
         self.results_df["Queue_time_triage"] = []
-        self.results_df["Queue_time_bed"] = []
+        self.results_df["Queue_time_amu_bed"] = []
+        self.results_df["Queue_time_adec_slot"] = []
         self.results_df.set_index("Patient_ID", inplace=True)
 
     def generate_patients(self):
@@ -111,14 +121,14 @@ class AMUModel:
 
             self.patient_counter +=1
 
-            pat = Patient(self.patient_counter, g.probability_amu)
+            pat = Patient(self.patient_counter, G.probability_amu)
 
             pat.decide_route()
 
             self.env.process(self.patient_pathway(pat))
 
-            yield self.env.timeout(random.expovariate(1.0 /
-                                                G.patient_interarrival_time))
+            yield self.env.timeout(random.expovariate(1.0
+                                                / G.patient_interarrival_time))
 
     def patient_pathway(self, patient):
 
@@ -131,11 +141,40 @@ class AMUModel:
             end_queue_triage = self.env.now
             patient.queue_for_triage = end_queue_triage - start_queue_triage
 
-            sampled_triage_duration = random.expovariate(1.0 / 
-                                                            G.mean_triage_time)
+            sampled_triage_duration = random.expovariate(1.0
+                                                        / G.mean_triage_time)
             yield self.env.timeout(sampled_triage_duration)
 
-            # AMU route
+        # AMU route
+        if patient.amu_patient is True:
+            start_queue_amu_bed = self.env.now
 
+            with self.amu_bed.request() as req:
+                yield req
 
-            # SDEC route
+            end_queue_amu_bed = self.env.now
+            patient.queue_for_amu_bed = end_queue_amu_bed - start_queue_amu_bed
+
+            sampled_amu_stay_time = random.expovariate(1.0
+                                                        / G.mean_amu_stay_time)
+            yield self.env.timeout(sampled_amu_stay_time)
+
+        # SDEC route
+        else:
+            start_queue_sdec_slot = self.env.now
+
+            with self.sdec_slot.request() as req:
+                yield req
+
+            end_queue_sdec_slot = self.env.now
+            patient.queue_for_sdec_slot = (end_queue_sdec_slot
+                                            - start_queue_sdec_slot)
+
+            sampled_sdec_stay_time = random.expovariate(1.0
+                                                        / G.mean_sdec_stay_time)
+            yield self.env.timeout(sampled_sdec_stay_time)
+        
+        if self.env.now > G.sim_warm_up_time:
+            self.store_patient_results(patient)
+
+    def store_patient_results(self, patient):
