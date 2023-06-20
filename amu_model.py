@@ -72,7 +72,7 @@ class g:
 
     sim_warm_up_time = DAY_IN_MINS
     sim_duration_time = WEEK_IN_MINS
-    simulation_runs = 100
+    simulation_runs = 1
 
 
 # Entity class
@@ -114,9 +114,11 @@ class ACModel:
         """2"""
         self.results_df = pd.DataFrame()
         self.results_df["Patient_ID"] = []
+        self.results_df["Start_Q_Triage"] = []
+        self.results_df["End_Q_Triage"] = []
         self.results_df["Queue_time_triage"] = []
-        self.results_df["Queue_time_amu_bed"] = []
-        self.results_df["Queue_time_sdec_slot"] = []
+        #self.results_df["Queue_time_amu_bed"] = []
+        #self.results_df["Queue_time_sdec_slot"] = []
         self.results_df.set_index("Patient_ID", inplace=True)
 
     # A method that generates patients arriving
@@ -132,7 +134,7 @@ class ACModel:
 
             # Determine the patient's AMU destiny by running the appropriate
             # method
-            pat.decide_route()
+        #    pat.decide_route()
 
             # Get the SimPy environment to run the ed_patient_journey method 
             # with this patient
@@ -145,6 +147,7 @@ class ACModel:
 
         # Triage by Admissions Co-ordinator
         start_queue_triage = self.env.now
+        print(f"Patient number {patient.id} start queue for triage at {start_queue_triage}")
 
         # Requesting an Admissions Coordinator and freeze the function until the request for one can be met
         with self.adm_coordinator.request() as req:
@@ -152,7 +155,9 @@ class ACModel:
 
             # Record the time the patient finished queuing for the Admissions Coordinator, then calculate the time spent queuing and store with the patient
             end_queue_triage = self.env.now
+            print(f"Patient number {patient.id} end queue for triage at {end_queue_triage}")
             patient.queue_for_triage = end_queue_triage - start_queue_triage
+            print(f"Patient number {patient.id} queue for triage for {patient.queue_for_triage}")
 
             # Store the start and end queue times alongside the patient ID in
             # the Pandas DataFrame of the AC Model class
@@ -161,10 +166,14 @@ class ACModel:
                                       "End_Q_Triage":[end_queue_triage],
                                       "Queue_time_triage":[patient.queue_for_triage]})
             df_to_add.set_index("Patient_ID", inplace=True)
-            print("Hello")
-            pd.concat([self.results_df, df_to_add])
-            print("Goodbye")
-            
+
+            print(f"Patient number {patient.id} dataframe: {df_to_add}")
+
+            #pd.concat([self.results_df, df_to_add])
+            self.results_df = self.results_df.append(df_to_add)
+
+            print(self.results_df)
+     
             # Randomly sample the time the patient will spend in triage
             # with the Admissions Coordinator  The mean is stored in the g class.            
             sampled_triage_duration = random.expovariate(1.0 / g.mean_triage_time)
