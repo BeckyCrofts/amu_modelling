@@ -1,2 +1,6 @@
 # Becky's work laptop vscode workspace 
 project.code-workspace 
+
+
+# Output file
+trial_results.csv
