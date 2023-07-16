@@ -157,8 +157,9 @@ class G:
 
     # used by check_day_and_hour function in model class to determine whether to
     # use week day or weekend day opening hours
-    days_of_week = {0: "week", 1: "week", 2: "week", 3: "week", 4: "week",
-                    5: "weekend", 6: "weekend"}
+    # assumes week starts on a Monday
+    days_of_week = {0: 'week', 1: 'week', 2: 'week', 3: 'week', 4: 'week',
+                    5: 'weekend', 6: 'weekend'}
 
     mean_amu_stay_time = DAY_IN_MINS * 1.5 # 36h - made up
     mean_sdec_stay_time = 240 # made up
@@ -175,11 +176,17 @@ class Patient:
     #def __init__(self, patient_id, probability_amu, probability_virtual):
     def __init__(self, patient_id):
         self.id = patient_id
-        # self.probability_amu = probability_amu
-        # self.probability_virtual = probability_virtual
-        # self.amu_patient = False
-        # self.virtual_patient = False
-        # self.route_probability = random.uniform(0, 1)
+        self.probability_amu = 0
+        self.probability_sdec = 0
+        self.probability_virtual = 0
+        self.amu_patient = False
+        self.sdec_patient = False
+        self.virtual_patient = False
+        # random.uniform produces values in the range [a, b) meaning the
+        # possible range includes a exactly, but not b exactly
+        # therefore for us our values range from 0 to 0.999...
+        # need to consider this when producing our real probabilities
+        self.route_probability = random.uniform(0, 1)
 
         self.start_queue_triage = 0
         self.end_queue_triage = 0
@@ -197,11 +204,33 @@ class Patient:
         self.end_queue_virtual_slot = 0
         self.queue_for_virtual_slot = 0
 
-    # def decide_route(self):
-    #     if self.route_probability  < self.probability_amu:
-    #         self.amu_patient = True
-    #     elif self.route_probability > (1 - self.probability_virtual):
-    #         self.virtual_patient = True
+    def decide_route(self, day_to_sample, hour_to_sample):
+        # range of probabilities
+        # [ | | | | | | | | | ]
+        # 0        50        100
+        # all other routes closed: P(amu) = 100%
+        # [A|A|A|A|A|A|A|A|A|A]
+        # if route_prob >= 0 and < P(amu) (1.0) then AMU
+        # 0        50        100
+        # [A|A|A|A| | | | | |V]
+        # 0        50        100
+        # if route_prob >= 0 and < P(amu) (0.4) then AMU
+        # else if route_prob >= (1 - P(virtual)) (1 - 0.1 = 0.9) then virtual
+        # otherwise SDEC
+
+        self.probability_amu = (G.hourly_route_probabilities['amu']
+                                               [day_to_sample][hour_to_sample])
+        self.probability_sdec = (G.hourly_route_probabilities['sdec']
+                                                [day_to_sample][hour_to_sample])
+        self.probability_virtual = (G.hourly_route_probabilities['virtual']
+                                                [day_to_sample][hour_to_sample])
+    
+        if self.route_probability  < self.probability_amu:
+            self.amu_patient = True
+        elif self.route_probability >= (1 - self.probability_virtual):
+            self.virtual_patient = True
+        else:
+            self.sdec_patient = True
 
 
 # Simulation environment class
@@ -285,7 +314,6 @@ class AMUModel:
 
     def patient_pathway(self, patient):
 
-
         # Triage by Admissions Co-ordinator
         start_queue_triage = self.env.now
         #print(f"Patient number {patient.id}: "
@@ -314,7 +342,9 @@ class AMUModel:
             # Freeze this function until that time has elapsed
             yield self.env.timeout(sampled_triage_duration)
 
-        
+
+        Patient.decide_route(patient, *self.check_day_and_hour(self.env.now))
+
         # AMU route
         if patient.amu_patient is True:
             
@@ -355,7 +385,7 @@ class AMUModel:
             yield self.env.timeout(sampled_virtual_stay_time)
 
         # SDEC route
-        else:
+        if patient.sdec_patient is True:
 
             start_queue_sdec_slot = self.env.now
 
