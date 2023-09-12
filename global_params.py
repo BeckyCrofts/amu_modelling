@@ -27,19 +27,27 @@ class G:
     df_blank_pats_per_day = create_df_pats_per_day()
 
     def create_df_routes_example():
-
-        df = pd.DataFrame([
+        
+        df_routes = pd.DataFrame([
                     {'Route name': 'AMU',
                         'Capacity': 40, 'LoS': 2160, '247': True},
                     {'Route name': 'SDEC',
                         'Capacity': 20, 'LoS': 120, '247': False},
                     {'Route name': 'Virtual',
                         'Capacity': 80, 'LoS': 8640, '247': False}])
-        df.set_index('Route name', inplace=True)
+        df_routes.set_index('Route name', inplace=True)
 
-        return df
+        return df_routes
 
     df_routes_example = create_df_routes_example()
+
+    def create_df_reject_route():
+
+        df_reject = pd.DataFrame([{'Route name': 'Reject referral',
+                        'Capacity': NaN, 'LoS': NaN, '247': True}])
+        df_reject.set_index('Route name', inplace=True)
+
+        return df_reject
 
     # all time variables in minutes
     virtual_capacity = 100 # made up - in reality there may not be a capacity limit
@@ -50,6 +58,7 @@ class G:
   
     patient_interarrival_time = 30 # made up
     mean_triage_time = 30 # made up
+    mean_rejected_referrals = 5 # made up
 
     # these need to be replaced with hourly probabilities to simulate SDEC being
     # closed and AMU picking up those patients
