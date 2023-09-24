@@ -1,4 +1,5 @@
 from datetime import time
+#import time
 import itertools
 import csv
 import streamlit as st
@@ -6,7 +7,7 @@ import pandas as pd
 import numpy as np
 
 #from results_calc import Run_Results_Calculator, Trial_Results_Calculator
-from acute_med_pathway import AMUModel
+#from acute_med_pathway import AMUModel
 from global_params import G
 
 
@@ -257,6 +258,8 @@ with st.sidebar:
 
             if 'dict_df_route_hours' not in st.session_state:
                 st.session_state['dict_df_route_hours'] = {}
+            if 'df_mi_all_routes_hours' not in st.session_state:
+                st.session_state['df_mi_all_routes_hours'] = {}
 
             dict_df_all_routes_hours = {}
             dict_all_routes_hours_blank = {}
@@ -266,7 +269,8 @@ with st.sidebar:
 # later in Streamlit data editors
                 dict_all_routes_hours_blank[route] = pd.DataFrame(
                                                     G.df_route_hours_example,
-                                                    index=G.LIST_DAYS_OF_WEEK)
+                                                    index=['Weekday',
+                                                            'Weekend'])
                 dict_all_routes_hours_blank[route].index.name = 'Day'
 # Initialise placeholder dictionary to temporarily hold user-entered data until
 # they click Submit button and commit data to session state
@@ -316,6 +320,8 @@ with st.sidebar:
             print(dict_df_all_routes_hours)
             print("dict_all_routes_hours_blank")
             print(dict_all_routes_hours_blank)
+        
+
 
 
     with st.form(key='form_route_crossover'):
@@ -397,15 +403,23 @@ if st.button("Start simulation"):
 
     with st.spinner("Running simulation"):
 
-        for run in range(st.session_state['simulation_runs']):
+        # convert the dictionary of dataframes into a multiindex dataframe where
+        # the dictionary key becomes the first index
+        # Streamlit's data editor widget can't use multiindex so this can't be
+        # done until we're sure the user is finished with data entry, i.e when
+        # they click the start simulation button
+        df_all_routes_hours = pd.concat(st.session_state['dict_df_route_hours'])
+        df_all_routes_hours.index.names = ['Route', 'Day']
 
-            my_model = AMUModel(run,
-                                st.session_state['sim_duration_time'],
-                                st.session_state['sim_warm_up_time'],
-                                st.session_state['df_pats_per_day'],
-                                st.session_state['adm_coord_capacity'],
-                                st.session_state['mean_triage_time'],
-                                st.session_state['df_routes'],
-                                st.session_state['need_route_hours'],
-                                st.session_state['dict_crossover_rates'])
+        # for run in range(st.session_state['simulation_runs']):
+
+        #     my_model = AMUModel(run,
+        #                         st.session_state['sim_duration_time'],
+        #                         st.session_state['sim_warm_up_time'],
+        #                         st.session_state['df_pats_per_day'],
+        #                         st.session_state['adm_coord_capacity'],
+        #                         st.session_state['mean_triage_time'],
+        #                         st.session_state['df_routes'],
+        #                         df_all_routes_hours,
+        #                         st.session_state['dict_crossover_rates'])
 

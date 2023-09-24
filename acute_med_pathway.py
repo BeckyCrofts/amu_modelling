@@ -2,6 +2,8 @@ import simpy
 import pandas as pd
 import csv
 import random
+import datetime
+from datetime import time
 
 from global_params import G
 from patient import Patient
@@ -16,7 +18,7 @@ class AMUModel:
                 adm_coordinator_capacity,
                 mean_triage_time,
                 df_routes,
-                dict_df_route_hours,
+                df_all_routes_hours,
                 dict_crossover_rates):
         
         # Setup the environment
@@ -52,14 +54,22 @@ class AMUModel:
     def check_day_and_hour(self, current_sim_time):
         
         day_to_sample = G.days_of_week[
-                                    int((current_sim_time // G.DAY_IN_MINS) % 7)]
+                                int((current_sim_time // G.DAY_IN_MINS) % 7)]
         
-        hour_to_sample = int((current_sim_time -
-                   (int(current_sim_time // G.DAY_IN_MINS) * G.DAY_IN_MINS)) // 60)
-        
-        return day_to_sample, hour_to_sample
+        # hour_to_sample = int((current_sim_time
+        #                         - (int(current_sim_time // G.DAY_IN_MINS)
+        #                             * G.DAY_IN_MINS))
+        #                     // 60)
 
-    def decide_route(self, patient, day_to_sample, hour_to_sample):
+        td = datetime.timedelta(minutes=current_sim_time)
+        time_to_sample = (datetime.datetime.min + td).time()
+
+        weekday_or_weekend = G.DICT_DAYS_TO_WEEKDAY[day_to_sample]
+        
+        return day_to_sample, time_to_sample, weekday_or_weekend
+
+    def decide_route(self, patient, day_to_sample, time_to_sample,
+                    weekday_or_weekend, df_routes, dict_df_route_hours):
 
         # for any given day & time in the model's run check what routes are 
         # available
@@ -74,15 +84,53 @@ class AMUModel:
         # patient to that route
 
         # WHAT DO WE DO IF THERE ARE TWO OR MORE 24/7 ROUTES AVAILABLE??
+        # USE NUMBER OF PATS PER DAY FOR THE TWO ROUTES TO CALCULATE A RATIO
 
 
+        # create a mask to filter routes dataframe to only those routes that are
+        # not open 24/7
+        mask_not_247 = df_routes['247'] == False
+        # create list of routes from above mask
+        list_route_probability = df_routes[mask_not_247].index.to_list()
+        # then fill a dictionary of these routes with a default route 
+        # probability of 0
+        dict_route_probability = {route: 0 for route in list_route_probability}
 
 
+        # iterate through routes in the dictionary above
+        for route in dict_route_probability:
+            # create a mask to filter the route hours data frame to the specific
+            # route and day
+            mask_route_day = ((df_all_routes_hours.index
+                                .get_level_values('Route') == route)
+                            & (df_all_routes_hours.index
+                                .get_level_values('Day') == weekday_or_weekend))
+
+            # check whether value in the 'Closed' column is True or False
+            if df_all_routes_hours[mask_route_day].iloc[0, 0] == True:
+                # if True (closed) then set probability of going to that route
+                # as 0
+                dict_route_probability[route] = 0
+            elif df_all_routes_hours[mask_route_day].iloc[0, 0] == False:
+                # if False (open) then check whether route is open at the
+                # current time
+                open_time = df_all_routes_hours[mask_route_day].iloc[0, 1]
+                close_time = df_all_routes_hours[mask_route_day].iloc[0, 2]
+                if time_to_sample >= open_time and time_to_sample < close_time:
+                # if current simulation time is within the route's opening hours
+                # then calculate
+                    
+                    # calculate route prob
+
+                    return
+
+                else:
+                # if current simulation time is outside of the route's opening
+                # hours then set probability of going to that route as 0
+                    dict_route_probability[route] = 0
 
 
-
-
-
+            
 
 
 

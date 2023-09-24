@@ -13,13 +13,15 @@ class G:
     def create_df_pats_per_day():
 
         df = pd.DataFrame([
-                    {'Day': 'Monday', 'Number of patients': 0},
-                    {'Day': 'Tuesday', 'Number of patients': 0},
-                    {'Day': 'Wednesday', 'Number of patients': 0},
-                    {'Day': 'Thursday', 'Number of patients': 0},
-                    {'Day': 'Friday', 'Number of patients': 0},
-                    {'Day': 'Saturday', 'Number of patients': 0},
-                    {'Day': 'Sunday', 'Number of patients': 0}])                    
+                    # {'Day': 'Monday', 'Number of patients': 0},
+                    # {'Day': 'Tuesday', 'Number of patients': 0},
+                    # {'Day': 'Wednesday', 'Number of patients': 0},
+                    # {'Day': 'Thursday', 'Number of patients': 0},
+                    # {'Day': 'Friday', 'Number of patients': 0},
+                    # {'Day': 'Saturday', 'Number of patients': 0},
+                    # {'Day': 'Sunday', 'Number of patients': 0}])
+                    {'Day': 'Weekday', 'Number of patients': 0},
+                    {'Day': 'Weekend',  'Number of patients': 0}])
         df.set_index('Day', inplace=True)
 
         return df
@@ -145,6 +147,10 @@ class G:
     DICT_DAYS_OF_WEEK = {0: 'Monday', 1: 'Tuesday', 2: 'Wednesday',
                     3: 'Thursday', 4: 'Friday', 5: 'Saturday',
                     6: 'Sunday'}
+
+    DICT_DAYS_TO_WEEKDAY = {0: 'Weekday', 1: 'Weekday', 2: 'Weekday',
+                            3: 'Weekday', 4: 'Weekday', 5: 'Weekend',
+                            6: 'Weekend'}
 
     LIST_DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 
                         'Friday', 'Saturday', 'Sunday']
