@@ -82,10 +82,10 @@ with st.sidebar:
                                     key='num_sim_warm_up')
 
 # TESTING
-    with st.expander("Testing"):
-        st.session_state['simulation_runs']
-        st.session_state['sim_duration_time']
-        st.session_state['sim_warm_up_time']
+    # with st.expander("Testing"):
+    #     st.session_state['simulation_runs']
+    #     st.session_state['sim_duration_time']
+    #     st.session_state['sim_warm_up_time']
 
 
     st.header("Incoming patients (pre-triage)")
@@ -106,8 +106,8 @@ with st.sidebar:
                         key='data_pat_per_day')
             
 # TESTING
-    with st.expander("Testing"):
-        st.session_state['df_pats_per_day']
+    # with st.expander("Testing"):
+    #     st.session_state['df_pats_per_day']
 
 # remove confidence/sensitivity questions for now - add back in if have time for
 # this later
@@ -184,9 +184,9 @@ with st.sidebar:
     #                     key='radio_conf_triage_time')
 
 # TESTING
-    with st.expander("Testing"):
-        st.session_state['adm_coord_capacity']
-        st.session_state['mean_triage_time']
+    # with st.expander("Testing"):
+    #     st.session_state['adm_coord_capacity']
+    #     st.session_state['mean_triage_time']
 
 
     st.header("Post-triage")
@@ -241,9 +241,9 @@ with st.sidebar:
                                             df_routes['247'] == False].tolist()
 
 # TESTING
-    with st.expander("Routes testing"):
-        st.dataframe(st.session_state['df_routes'])
-        st.session_state['need_route_hours']
+    # with st.expander("Routes testing"):
+    #     st.dataframe(st.session_state['df_routes'])
+    #     st.session_state['need_route_hours']
 
 
     if len(st.session_state['need_route_hours']) > 0:
@@ -306,20 +306,20 @@ with st.sidebar:
             #DEFAULTED IN
 
 #TESTING
-        with st.expander("Route hours testing"):
-            G.df_route_hours_example
-            st.session_state['dict_df_route_hours']
-            dict_df_all_routes_hours
-            dict_all_routes_hours_blank
+        # with st.expander("Route hours testing"):
+        #     G.df_route_hours_example
+        #     st.session_state['dict_df_route_hours']
+        #     dict_df_all_routes_hours
+        #     dict_all_routes_hours_blank
 
-            print("G.df_route_hours_example:")
-            print(G.df_route_hours_example)
-            print("st.session_state['dict_df_route_hours']")
-            print(st.session_state['dict_df_route_hours'])
-            print("dict_df_all_routes_hours")
-            print(dict_df_all_routes_hours)
-            print("dict_all_routes_hours_blank")
-            print(dict_all_routes_hours_blank)
+        #     print("G.df_route_hours_example:")
+        #     print(G.df_route_hours_example)
+        #     print("st.session_state['dict_df_route_hours']")
+        #     print(st.session_state['dict_df_route_hours'])
+        #     print("dict_df_all_routes_hours")
+        #     print(dict_df_all_routes_hours)
+        #     print("dict_all_routes_hours_blank")
+        #     print(dict_all_routes_hours_blank)
         
 
 
@@ -356,11 +356,11 @@ with st.sidebar:
             st.session_state['dict_crossover_rates'] = dict_crossover_rates
 
 # TESTING
-    with st.expander("Route crossover testing"):
-        list_crossover_tuples
-# print these to console as Streamlit can't render a dict with a tuple as key
-    print(dict_crossover_rates)
-    print(st.session_state['dict_crossover_rates'])
+#     with st.expander("Route crossover testing"):
+#         list_crossover_tuples
+# # print these to console as Streamlit can't render a dict with a tuple as key
+#     print(dict_crossover_rates)
+#     print(st.session_state['dict_crossover_rates'])
 
 
 
@@ -413,13 +413,13 @@ if st.button("Start simulation"):
 
         # for run in range(st.session_state['simulation_runs']):
 
-        #     my_model = AMUModel(run,
-        #                         st.session_state['sim_duration_time'],
-        #                         st.session_state['sim_warm_up_time'],
-        #                         st.session_state['df_pats_per_day'],
-        #                         st.session_state['adm_coord_capacity'],
-        #                         st.session_state['mean_triage_time'],
-        #                         st.session_state['df_routes'],
-        #                         df_all_routes_hours,
-        #                         st.session_state['dict_crossover_rates'])
+            # my_model = AMUModel(run,
+            #                     st.session_state['sim_duration_time'],
+            #                     st.session_state['sim_warm_up_time'],
+            #                     st.session_state['df_pats_per_day'],
+            #                     st.session_state['adm_coord_capacity'],
+            #                     st.session_state['mean_triage_time'],
+            #                     st.session_state['df_routes'],
+            #                     df_all_routes_hours,
+            #                     st.session_state['dict_crossover_rates'])
 

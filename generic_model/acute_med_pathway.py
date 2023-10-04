@@ -8,6 +8,11 @@ from datetime import time
 from global_params import G
 from patient import Patient
 
+
+
+
+
+
 # Simulation environment class
 class AMUModel:
     def __init__(self,
@@ -187,6 +192,12 @@ class AMUModel:
             # Freeze this function until that time has elapsed
             yield self.env.timeout(random.expovariate(1.0 /
                                                 G.patient_interarrival_time))
+
+
+#
+# SHOULD PROBABLY HAVE A ROUTE CLASS FOR THE GENERIC MODEL
+#
+
 
     def patient_pathway(self, patient):
 
