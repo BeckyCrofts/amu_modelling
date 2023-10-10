@@ -12,7 +12,7 @@ class G:
     sdec_capacity = 14
     adm_coordinator_capacity = 1 # assumed this for now
   
-    patient_interarrival_time = 30 # made up
+    patient_interarrival_time = 20 # made up
     mean_triage_time = 30 # made up
 
     # these need to be replaced with hourly probabilities to simulate SDEC being
@@ -100,7 +100,7 @@ class G:
 
     mean_amu_stay_time = DAY_IN_MINS * 1.5 # 36h - made up
     mean_sdec_stay_time = 240 # made up
-    mean_virtual_stay_time = 10 # made up
+    mean_virtual_stay_time = DAY_IN_MINS * 5 # made up
 
     sim_warm_up_time = DAY_IN_MINS * 2
     sim_warm_up_perc = 10

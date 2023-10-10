@@ -2,32 +2,48 @@ import pandas as pd
 
 class Run_Results_Calculator:
 
-    self.mean_queue_time_triage = 0
-    self.mean_queue_time_amu_bed = 0
-    self.mean_queue_time_sdec_slot = 0
-    self.mean_queue_time_virtual_slot = 0
+    # self.mean_queue_time_triage = 0
+    # self.mean_queue_time_amu_bed = 0
+    # self.mean_queue_time_sdec_slot = 0
+    # self.mean_queue_time_virtual_slot = 0
     
-    # initialise the results dataframe for the run
-    # this will contain a row per patient with data on their queue times
-    self.results_df = pd.DataFrame()
-    self.results_df["Patient_ID"] = []
-    self.results_df.set_index("Patient_ID", inplace=True)
+    def __init__(self):
+        # initialise the results dataframe for the run
+        # this will contain a row per patient with data on their queue times
+        self.results_df = pd.DataFrame()
+        self.results_df["Patient_ID"] = []
+        self.results_df.set_index("Patient_ID", inplace=True)
 
-    self.results_df["Start_Q_Triage"] = []
-    self.results_df["End_Q_Triage"] = []
-    self.results_df["Queue_time_triage"] = []
+        self.results_df["Start_Q_Triage"] = []
+        self.results_df["End_Q_Triage"] = []
+        self.results_df["Queue_time_triage"] = []
 
-    self.results_df["Start_Q_AMU"] = []
-    self.results_df["End_Q_AMU"] = []
-    self.results_df["Queue_time_amu"] = []
+        self.results_df["Start_Q_AMU"] = []
+        self.results_df["End_Q_AMU"] = []
+        self.results_df["Queue_time_amu"] = []
 
-    self.results_df["Start_Q_SDEC"] = []
-    self.results_df["End_Q_SDEC"] = []
-    self.results_df["Queue_time_sdec"] = []
+        self.results_df["Start_Q_SDEC"] = []
+        self.results_df["End_Q_SDEC"] = []
+        self.results_df["Queue_time_sdec"] = []
 
-    self.results_df["Start_Q_virtual"] = []
-    self.results_df["End_Q_virtual"] = []
-    self.results_df["Queue_time_virtual"] = []
+        self.results_df["Start_Q_virtual"] = []
+        self.results_df["End_Q_virtual"] = []
+        self.results_df["Queue_time_virtual"] = []
+
+
+
+    def append_pat_results(self, df_to_add):
+
+        self.results_df = pd.concat([self.results_df, df_to_add])
+
+
+
+    def calculate_run_results(self):
+
+        #csv_path = '/home/rebecca/HSMA/project/amu_modelling/rduh_model/'
+        csv_path = 'run_results.csv'
+
+        self.results_df.to_csv("run_results.csv")
 
 
 

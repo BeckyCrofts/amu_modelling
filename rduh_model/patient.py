@@ -8,11 +8,13 @@ class Patient:
     def __init__(self, patient_id):
         self.id = patient_id
 
+        self.store_results = False
+
         # route probabilities and fate will be decided later on by decide_route
         # method of AMUModel class
-        self.probability_amu = 0
-        self.probability_sdec = 0
-        self.probability_virtual = 0
+        # self.probability_amu = 0
+        # self.probability_sdec = 0
+        # self.probability_virtual = 0
         self.amu_patient = False
         self.sdec_patient = False
         self.virtual_patient = False

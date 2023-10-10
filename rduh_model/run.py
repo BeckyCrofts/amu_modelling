@@ -2,6 +2,8 @@ import csv
 import streamlit as st
 import pandas as pd
 from datetime import time
+import matplotlib.pyplot as plt
+import plotly.express as px
 
 #from results_calc import Run_Results_Calculator, Trial_Results_Calculator
 from acute_med_pathway import AMUModel
@@ -95,6 +97,12 @@ with st.sidebar:
     #                                 value=G.sim_warm_up_perc,
     #                                 key='num_sim_warm_up')
 
+    #TESTING
+    # with st.expander("Testing"):
+    #     st.session_state['simulation_runs']
+    #     st.session_state['sim_duration_time']
+    #     st.session_state['sim_warm_up_time']
+
     st.divider()
 
     st.header("Model parameters")
@@ -146,19 +154,19 @@ with st.sidebar:
                                                     value=G.amu_capacity,
                                                     key='num_amu_capacity')
 
-    with col_amu2:
-        st.session_state['amu_open_time'] = st.time_input(
-                                                    label="AMU/MAU open time",
-                                                    help="",
-                                                    value=time(0,0),
-                                                    key='time_amu_open')
+    # with col_amu2:
+    #     st.session_state['amu_open_time'] = st.time_input(
+    #                                                 label="AMU/MAU open time",
+    #                                                 help="",
+    #                                                 value=time(0,0),
+    #                                                 key='time_amu_open')
     
-    with col_amu3:
-        st.session_state['amu_close_time'] = st.time_input(
-                                                    label="AMU/MAU close time",
-                                                    help="",
-                                                    value=time(0,0),
-                                                    key='time_amu_close')
+    # with col_amu3:
+    #     st.session_state['amu_close_time'] = st.time_input(
+    #                                                 label="AMU/MAU close time",
+    #                                                 help="",
+    #                                                 value=time(0,0),
+    #                                                 key='time_amu_close')
 
 
     with col_sdec1:
@@ -174,6 +182,7 @@ with st.sidebar:
                                                     label="SDEC open time",
                                                     help="",
                                                     value=time(0,0),
+                                                    step=3600,
                                                     key='time_sdec_open')
 
     with col_sdec3:
@@ -181,6 +190,7 @@ with st.sidebar:
                                                     label="SDEC close time",
                                                     help="",
                                                     value=time(0,0),
+                                                    step=3600,
                                                     key='time_sdec_close')
 
     with col_virt1:
@@ -196,6 +206,7 @@ with st.sidebar:
                                                     label="Virtual open time",
                                                     help="",
                                                     value=time(0,0),
+                                                    step=3600,
                                                     key='time_virtual_open')
 
     with col_virt3:
@@ -203,6 +214,7 @@ with st.sidebar:
                                                     label="Virtual close time",
                                                     help="",
                                                     value=time(0,0),
+                                                    step=3600,
                                                     key='time_virtual_close')
 
 
@@ -223,22 +235,22 @@ with st.sidebar:
 st.title('RDUH Acute Medical Pathway Simulation')
 
 st.markdown('Please use the sidebar to the left to set up the simulation as '
-            'desired and click the \'Simulate\' button below when done')
+            'desired and click the \'Run simulation\' button below when done')
 
 
-if st.button("Simulate"):
+if st.button("Run simulation"):
 
 # Spinner appears while model is running
-    with st.spinner('Running simulations...'):
+    with st.spinner('Running simulation...'):
 
 # MOVE THIS TO RESULTS CALC?
 
         # Create a file to store trial results, and write the column headers
         # 7
-        with open("trial_results.csv", "w") as f:
-            writer = csv.writer(f, delimiter=",")
-            column_headers = ["Run", "mean_queue_time_triage"]
-            writer.writerow(column_headers)
+        # with open("trial_results.csv", "w") as f:
+        #     writer = csv.writer(f, delimiter=",")
+        #     column_headers = ["Run", "mean_queue_time_triage"]
+        #     writer.writerow(column_headers)
 
         # For the number of runs specified by the user, create an instance of
         # the AMUModel class, and call its run method
@@ -250,10 +262,10 @@ if st.button("Simulate"):
                                 st.session_state['amu_capacity'],
                                 st.session_state['sdec_capacity'],
                                 st.session_state['virtual_capacity'],
-                                st.session_state['amu_open_time'],
+                                # st.session_state['amu_open_time'],
                                 st.session_state['sdec_open_time'],
                                 st.session_state['virtual_open_time'],
-                                st.session_state['amu_close_time'],
+                                # st.session_state['amu_close_time'],
                                 st.session_state['sdec_close_time'],
                                 st.session_state['virtual_close_time'])
             my_model.run()
@@ -261,10 +273,15 @@ if st.button("Simulate"):
         # Once the trial is complete, we'll create an instance of the
         # Trial_Result_Calculator class and run the print_trial_results method
         # 8
-        my_trial_results_calculator = Trial_Results_Calculator()
-        my_trial_results_calculator.print_trial_results()
+        # my_trial_results_calculator = Trial_Results_Calculator()
+        # my_trial_results_calculator.print_trial_results()
                 
-        st.success('Done!')
+        st.success('Simulation complete')
         # show results to the screen in a dataframe
-        print (my_trial_results_calculator.trial_results_df)
-        st.dataframe(my_trial_results_calculator.trial_results_df.describe())
+        # print (my_trial_results_calculator.trial_results_df)
+        # st.dataframe(my_trial_results_calculator.trial_results_df.describe())
+
+        fig, ax = plt.subplots()
+        my_model.run_result_calc.results_df["Queue_time_triage"].plot(kind='bar', x='Name', ax=ax)
+
+        st.pyplot(fig)
