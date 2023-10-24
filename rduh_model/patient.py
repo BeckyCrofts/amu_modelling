@@ -10,11 +10,6 @@ class Patient:
 
         self.store_results = False
 
-        # route probabilities and fate will be decided later on by decide_route
-        # method of AMUModel class
-        # self.probability_amu = 0
-        # self.probability_sdec = 0
-        # self.probability_virtual = 0
         self.amu_patient = False
         self.sdec_patient = False
         self.virtual_patient = False
@@ -27,6 +22,7 @@ class Patient:
         self.start_queue_triage = 0
         self.end_queue_triage = 0
         self.queue_for_triage = 0
+        self.triage_queue_timeout = False
 
         self.start_queue_amu_bed = 0
         self.end_queue_amu_bed = 0
@@ -39,5 +35,3 @@ class Patient:
         self.start_queue_virtual_slot = 0
         self.end_queue_virtual_slot = 0
         self.queue_for_virtual_slot = 0
-
-    # decide_route method moved to AMUModel class

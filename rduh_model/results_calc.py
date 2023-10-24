@@ -1,12 +1,8 @@
 import pandas as pd
+import csv
 
 class Run_Results_Calculator:
-
-    # self.mean_queue_time_triage = 0
-    # self.mean_queue_time_amu_bed = 0
-    # self.mean_queue_time_sdec_slot = 0
-    # self.mean_queue_time_virtual_slot = 0
-    
+   
     def __init__(self):
         # initialise the results dataframe for the run
         # this will contain a row per patient with data on their queue times
@@ -17,6 +13,7 @@ class Run_Results_Calculator:
         self.results_df["Start_Q_Triage"] = []
         self.results_df["End_Q_Triage"] = []
         self.results_df["Queue_time_triage"] = []
+        self.results_df["Triage_queue_timeout"] = []
 
         self.results_df["Start_Q_AMU"] = []
         self.results_df["End_Q_AMU"] = []
@@ -31,11 +28,9 @@ class Run_Results_Calculator:
         self.results_df["Queue_time_virtual"] = []
 
 
-
     def append_pat_results(self, df_to_add):
 
         self.results_df = pd.concat([self.results_df, df_to_add])
-
 
 
     def calculate_run_results(self):
@@ -46,11 +41,12 @@ class Run_Results_Calculator:
         self.results_df.to_csv("run_results.csv")
 
 
-
  # A method that calculates the average queuing time for Triage
     def calculate_mean_q_time_triage(self):
         self.mean_queue_time_triage = (
                                     self.results_df["Queue_time_triage"].mean())
+
+        return self.mean_queue_time_triage
 
 
     # A method to write run results to file.  Here, we write the run number

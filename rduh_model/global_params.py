@@ -7,13 +7,14 @@ class G:
 
     # all time variables in minutes
     virtual_capacity = 100 # made up - in reality there may not be a capacity limit
-    amu_capacity = 52
+    amu_capacity = 40
     #mtu_capacity = 6 - rolled into amu capacity for now - not clear on distinction
-    sdec_capacity = 14
+    sdec_capacity = 20
     adm_coordinator_capacity = 1 # assumed this for now
+    triage_wait_timeout = 60 # made up - how long a pt waits for triage before defaulting to AMU
   
-    patient_interarrival_time = 20 # made up
-    mean_triage_time = 30 # made up
+    patient_interarrival_time = 10 # made up
+    mean_triage_time = 15 # made up
 
     # these need to be replaced with hourly probabilities to simulate SDEC being
     # closed and AMU picking up those patients
@@ -98,7 +99,8 @@ class G:
     days_of_week = {0: 'week', 1: 'week', 2: 'week', 3: 'week', 4: 'week',
                     5: 'weekend', 6: 'weekend'}
 
-    mean_amu_stay_time = DAY_IN_MINS * 1.5 # 36h - made up
+    #mean_amu_stay_time = DAY_IN_MINS * 1.5 # 36h - made up
+    mean_amu_stay_time = DAY_IN_MINS * 4 # 4d - made up
     mean_sdec_stay_time = 240 # made up
     mean_virtual_stay_time = DAY_IN_MINS * 5 # made up
 

@@ -25,11 +25,14 @@ class AMUModel:
         
         # Setup the environment
         self.env = simpy.Environment()
+
+        self.resource_data = []
         
         # Setup the values from the default values set
         self.run_number = run_number
         self.sim_duration_time = sim_duration_time
-        self.sim_warm_up_time = int((sim_duration_time / 100) * sim_warm_up_time)
+        self.sim_warm_up_time = int((sim_duration_time / 100) *
+                                                            sim_warm_up_time)
 
         self.adm_coordinator_capacity = adm_coordinator_capacity
 
@@ -89,6 +92,21 @@ class AMUModel:
         # self.results_df["Queue_time_virtual_slot"] = []
 
         # self.results_df.set_index("Patient_ID", inplace=True)
+
+# THIS ISNT WORKING - REPORTS CAPACITY CORRECTLY BUT NOT THE ITEMS THAT WOULD ACTUALLY BE USEFUL
+    # def resource_utilisation(self, resource):
+    #     while True:
+    #         if self.env.now > self.sim_warm_up_time:
+    #             item = (self.env.now,
+    #                     resource.capacity,
+    #                     resource.users,
+    #                     resource.count,
+    #                     len(resource.queue))
+    #             self.resource_data.append(item)
+    #             print(item)
+    #             yield self.env.timeout(30)
+    #         else:
+    #             yield self.env.timeout(30)
 
     def check_day_and_hour(self, current_sim_time):
         
@@ -196,29 +214,35 @@ class AMUModel:
         #        f"start queue for triage at {start_queue_triage}")
 
         # Requesting an Admissions Coordinator and freeze the function until the
-        # request for one can be met
+        # request for one can be met or the patient has waited too long so
+        # defaults to AMU
         with self.adm_coordinator.request() as req:
-            yield req
+            yield req | self.env.timeout(G.triage_wait_timeout)
 
-# IF WAIT FOR TRIAGE IS TOO LONG WE NEED TO SKIP THIS STEP AND GO STRAIGHT TO AMU
-
+            #print(f"Patient {patient.id} waited {patient.queue_for_triage} "
+            #        f"for triage")
             # Record the time the patient finished queuing for the Admissions
             # Coordinator, then calculate the time spent queuing and store with
             # the patient
             patient.end_queue_triage = self.env.now
             #print(f"Patient number {patient.id}: "
             #        f"end queue for triage at {end_queue_triage}")
-            patient.queue_for_triage = patient.end_queue_triage - patient.start_queue_triage
-            print(f"Patient {patient.id} waited {patient.queue_for_triage} "
-                    f"for triage")
+            patient.queue_for_triage = (patient.end_queue_triage -
+                                                patient.start_queue_triage)
 
-            # Randomly sample the time the patient will spend in triage
-            # with the Admissions Coordinator  The mean is stored in the g class
-            sampled_triage_duration = random.expovariate(1.0 /
+            if not req.triggered:
+                # send pt straight to AMU
+                patient.triage_queue_timeout = True
+                patient.amu_patient = True
+
+            else:
+                # Randomly sample the time the patient will spend in triage
+                # with the Admissions Coordinator  The mean is stored in the g class
+                sampled_triage_duration = random.expovariate(1.0 /
                                                             G.mean_triage_time)
 
-            # Freeze this function until that time has elapsed
-            yield self.env.timeout(sampled_triage_duration)
+                # Freeze this function until that time has elapsed
+                yield self.env.timeout(sampled_triage_duration)
 
 
         # self.decide_route(patient, *self.check_day_and_hour(self.env.now),
@@ -234,35 +258,38 @@ class AMUModel:
             
             patient.start_queue_amu_bed = self.env.now
 
-            print(f"Patient {patient.id} is waiting for an AMU bed")
+            #print(f"Patient {patient.id} is waiting for an AMU bed")
 
             with self.amu_bed.request() as req:
                 yield req
 
             patient.end_queue_amu_bed = self.env.now
-            patient.queue_for_amu_bed = patient.end_queue_amu_bed - patient.start_queue_amu_bed
-            print(f"Patient {patient.id} waited {patient.queue_for_amu_bed} "
-                    "for an AMU bed")
+            patient.queue_for_amu_bed = (patient.end_queue_amu_bed -
+                                                    patient.start_queue_amu_bed)
+            #print(f"Patient {patient.id} waited {patient.queue_for_amu_bed} "
+            #        "for an AMU bed")
 
             sampled_amu_stay_time = random.expovariate(1.0
                                                         / G.mean_amu_stay_time)
             yield self.env.timeout(sampled_amu_stay_time)
+
+            print(f"pat {patient.id} in AMU bed for {self.env.now - patient.end_queue_amu_bed}")
 
         # Virtual ward route
         if patient.virtual_patient is True:
 
             patient.start_queue_virtual_slot = self.env.now
 
-            print(f"Patient {patient.id} is waiting for a Virtual ward slot")
+            #print(f"Patient {patient.id} is waiting for a Virtual ward slot")
 
             with self.virtual_slot.request() as req:
                 yield req
 
             patient.end_queue_virtual_slot = self.env.now
             patient.queue_for_virtual_slot = (patient.end_queue_virtual_slot -
-                                                    patient.start_queue_virtual_slot)
-            print(f"Patient {patient.id} waited "
-                    f"{patient.queue_for_virtual_slot} for a Virtual ward slot")
+                                            patient.start_queue_virtual_slot)
+            #print(f"Patient {patient.id} waited "
+            #        f"{patient.queue_for_virtual_slot} for a Virtual ward slot")
 
             sampled_virtual_stay_time = random.expovariate(1.0 /
                                                     G.mean_virtual_stay_time)
@@ -273,16 +300,16 @@ class AMUModel:
 
             patient.start_queue_sdec_slot = self.env.now
 
-            print(f"Patient {patient.id} is waiting for an SDEC slot")
+            #print(f"Patient {patient.id} is waiting for an SDEC slot")
 
             with self.sdec_slot.request() as req:
                 yield req
 
             patient.end_queue_sdec_slot = self.env.now
             patient.queue_for_sdec_slot = (patient.end_queue_sdec_slot
-                                            - patient.start_queue_sdec_slot)
-            print(f"Patient {patient.id} waited {patient.queue_for_sdec_slot} "
-                    f"for an SDEC slot")
+                                                - patient.start_queue_sdec_slot)
+            #print(f"Patient {patient.id} waited {patient.queue_for_sdec_slot} "
+            #        f"for an SDEC slot")
 
             sampled_sdec_stay_time = random.expovariate(1.0
                                                         / G.mean_sdec_stay_time)
@@ -305,62 +332,40 @@ class AMUModel:
             patient.queue_for_amu_bed = float("nan")
             patient.queue_for_virtual_slot = float("nan")
 
-        # Store the start and end queue times alongside the patient ID in
-        # the Pandas DataFrame of the AC Model class
-        self.df_to_add = pd.DataFrame({"Patient_ID":[patient.id],
-                                    "Start_Q_Triage":
-                                                [patient.start_queue_triage],
-                                    "End_Q_Triage":[patient.end_queue_triage],
-                                    "Queue_time_triage":
-                                                [patient.queue_for_triage],
-                                    "Start_Q_AMU":[patient.start_queue_amu_bed],
-                                    "End_Q_AMU":[patient.end_queue_amu_bed],
-                                    "Queue_time_amu":[patient.queue_for_amu_bed],
-                                    "Start_Q_SDEC":[patient.start_queue_sdec_slot],
-                                    "End_Q_SDEC":[patient.end_queue_sdec_slot],
-                                    "Queue_time_sdec":[patient.queue_for_sdec_slot],
-                                    "Start_Q_virtual":[patient.start_queue_virtual_slot],
-                                    "End_Q_virtual":[patient.end_queue_virtual_slot],
-                                    "Queue_time_virtual":[patient.queue_for_virtual_slot]
-                                                })
+        # Store the patient ID and their queuing data in a dataframe
+        self.df_to_add = pd.DataFrame({
+                        "Patient_ID":[patient.id],
+                        "Start_Q_Triage": [patient.start_queue_triage],
+                        "End_Q_Triage":[patient.end_queue_triage],
+                        "Queue_time_triage": [patient.queue_for_triage],
+                        "Triage_queue_timeout": [patient.triage_queue_timeout],
+                        "Start_Q_AMU":[patient.start_queue_amu_bed],
+                        "End_Q_AMU":[patient.end_queue_amu_bed],
+                        "Queue_time_amu":[patient.queue_for_amu_bed],
+                        "Start_Q_SDEC":[patient.start_queue_sdec_slot],
+                        "End_Q_SDEC":[patient.end_queue_sdec_slot],
+                        "Queue_time_sdec":[patient.queue_for_sdec_slot],
+                        "Start_Q_virtual":[patient.start_queue_virtual_slot],
+                        "End_Q_virtual":[patient.end_queue_virtual_slot],
+                        "Queue_time_virtual":[patient.queue_for_virtual_slot]
+                                        })
         self.df_to_add.set_index("Patient_ID", inplace=True)
 
-        print(f"Patient number {patient.id} dataframe: {self.df_to_add}")
-
+        # Call method to append patient's results to master dataframe for the
+        # run
         self.run_result_calc.append_pat_results(self.df_to_add)
 
 
-    # A method that calculates the average queuing time for an Admissions Coordinator (AC).  We can
-    # call this at the end of each run
-    # def calculate_mean_q_time_triage(self):
-    #     self.mean_queue_time_triage = (
-    #                                 self.results_df["Queue_time_triage"].mean())
-
-
-    # A method to write run results to file.  Here, we write the run number
-    # against the the calculated mean queuing time for the AC across
-    # patients in the run.  Again, we can call this at the end of each run
-    # def write_run_results(self):
-    #     with open("trial_results.csv", "a") as f:
-    #         writer = csv.writer(f, delimiter=",")
-    #         results_to_write = [self.run_number,
-    #                             self.mean_queue_time_triage]
-    #         writer.writerow(results_to_write)
-
-
-    # The run method starts up the entity generators, and tells SimPy to start
-    # running the environment for the duration specified in the g class. After
-    # the simulation has run, it calls the methods that calculate run
-    # results, and the method that writes these results to file
     def run(self):
         # Start entity generators
         self.env.process(self.generate_patients())
-        
+
+# see function - this isnt working
+        # Log resource utilisation
+        # self.env.process(self.resource_utilisation(self.amu_bed))
+
         # Run simulation
         self.env.run(until=self.sim_duration_time)
-        
+
         # Calculate run results
         self.run_result_calc.calculate_run_results()
-        
-        # Write run results to file
-#        self.write_run_results()

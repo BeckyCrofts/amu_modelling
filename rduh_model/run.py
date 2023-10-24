@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 from datetime import time
 import matplotlib.pyplot as plt
-import plotly.express as px
+import plotly as px
 
 #from results_calc import Run_Results_Calculator, Trial_Results_Calculator
 from acute_med_pathway import AMUModel
@@ -29,7 +29,7 @@ with st.sidebar:
 
     st.session_state['simulation_runs'] = st.slider(
                                         label="Number of simulation runs",
-                                        help="",
+                                        help="!!help text here!!",
                                         min_value=1,
                                         max_value=50,
                                         key='slid_sim_runs')
@@ -52,7 +52,7 @@ with st.sidebar:
     st.session_state['sim_duration_time'] = int((G.DAY_IN_MINS)*
                             (st.slider(
                                 label="Time period to simulate (in days)",
-                                help="",
+                                help="!!help text here!!",
                                 min_value=int(G.WEEK_IN_MINS/G.DAY_IN_MINS),
                                 max_value=int((G.WEEK_IN_MINS*52)
                                                 /G.DAY_IN_MINS),
@@ -81,7 +81,7 @@ with st.sidebar:
     st.session_state['sim_warm_up_time'] = st.slider(
                                     label="Simulation warm up time (as "
                                     "percentage of time period to simulate)",
-                                    help="",
+                                    help="!!help text here!!",
                                     min_value=5,
                                     max_value=50,
                                     value=G.sim_warm_up_perc,
@@ -117,7 +117,7 @@ with st.sidebar:
     st.session_state['adm_coord_capacity'] = st.number_input(
                                     label="Number of Admissions Coordinators / "
                                     "Triage Nurses",
-                                    help="",
+                                    help="!!help text here!!",
                                     min_value=1,
                                     value=G.adm_coordinator_capacity,
                                     key='num_adm_coord')
@@ -149,7 +149,7 @@ with st.sidebar:
     with col_amu1:
         st.session_state['amu_capacity'] = st.number_input(
                                                     label="AMU/MAU capacity",
-                                                    help="",
+                                                    help="!!help text here!!",
                                                     min_value=1,
                                                     value=G.amu_capacity,
                                                     key='num_amu_capacity')
@@ -172,7 +172,7 @@ with st.sidebar:
     with col_sdec1:
         st.session_state['sdec_capacity'] = st.number_input(
                                                     label="SDEC capacity",
-                                                    help="",
+                                                    help="!!help text here!!",
                                                     min_value=1,
                                                     value=G.sdec_capacity,
                                                     key='num_sdec_capacity')
@@ -180,7 +180,7 @@ with st.sidebar:
     with col_sdec2:
         st.session_state['sdec_open_time'] = st.time_input(
                                                     label="SDEC open time",
-                                                    help="",
+                                                    help="!!help text here!!",
                                                     value=time(0,0),
                                                     step=3600,
                                                     key='time_sdec_open')
@@ -188,7 +188,7 @@ with st.sidebar:
     with col_sdec3:
         st.session_state['sdec_close_time'] = st.time_input(
                                                     label="SDEC close time",
-                                                    help="",
+                                                    help="!!help text here!!",
                                                     value=time(0,0),
                                                     step=3600,
                                                     key='time_sdec_close')
@@ -196,7 +196,7 @@ with st.sidebar:
     with col_virt1:
         st.session_state['virtual_capacity'] = st.number_input(
                                                     label="Virtual capacity",
-                                                    help="",
+                                                    help="!!help text here!!",
                                                     min_value=1,
                                                     value=G.virtual_capacity,
                                                     key='num_virtual_capacity')
@@ -204,7 +204,7 @@ with st.sidebar:
     with col_virt2:
         st.session_state['virtual_open_time'] = st.time_input(
                                                     label="Virtual open time",
-                                                    help="",
+                                                    help="!!help text here!!",
                                                     value=time(0,0),
                                                     step=3600,
                                                     key='time_virtual_open')
@@ -212,7 +212,7 @@ with st.sidebar:
     with col_virt3:
         st.session_state['virtual_close_time'] = st.time_input(
                                                     label="Virtual close time",
-                                                    help="",
+                                                    help="!!help text here!!",
                                                     value=time(0,0),
                                                     step=3600,
                                                     key='time_virtual_close')
@@ -276,12 +276,52 @@ if st.button("Run simulation"):
         # my_trial_results_calculator = Trial_Results_Calculator()
         # my_trial_results_calculator.print_trial_results()
                 
-        st.success('Simulation complete')
         # show results to the screen in a dataframe
         # print (my_trial_results_calculator.trial_results_df)
         # st.dataframe(my_trial_results_calculator.trial_results_df.describe())
 
-        fig, ax = plt.subplots()
-        my_model.run_result_calc.results_df["Queue_time_triage"].plot(kind='bar', x='Name', ax=ax)
+        st.header("Results")
 
-        st.pyplot(fig)
+        st.dataframe(my_model.run_result_calc.results_df)
+
+        tab_wait, tab_util = st.tabs(["Queues", "Utilisation"])
+
+        with tab_wait:
+            st.header("Queues")
+
+            col_chart, col_data = st.columns(2)
+
+            with col_data:
+                describe_df = my_model.run_result_calc.results_df[
+                                                ["Queue_time_triage",
+                                                "Queue_time_amu",
+                                                "Queue_time_sdec",
+                                                "Queue_time_virtual"]].copy()
+
+                st.dataframe(describe_df.describe())
+
+                st.text(my_model.run_result_calc.calculate_mean_q_time_triage())
+
+            with col_chart:
+                mean_values = my_model.run_result_calc.results_df.mean()
+                #fig = plt.bar(x=["mean"], y=[mean_values], labels={'x':'data','y':'mean value'},title='Title')
+                fig, ax = plt.subplots()
+                ax.axhline(y=mean_values["Queue_time_triage"], label='Mean Value')
+                my_model.run_result_calc.results_df[
+                                    "Queue_time_triage"].plot(kind='bar', ax=ax)
+                ax.set_xlabel('Patient Runs')
+                ax.set_ylabel('Queue Time Triage')
+                # Go up in steps of 25 on the x axis so it's not all
+                # clumped together
+                ax.set_xticks(ax.get_xticks()[::25])
+                ax.legend()
+                #ax.plot(my_model.run_result_calc.results_df.index, my_model.run_result_calc.results_df["Queue_time_triage"])
+                st.pyplot(fig)
+
+                
+
+
+        with tab_util:
+            st.header("Resource utilisation")
+
+            
