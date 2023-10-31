@@ -5,7 +5,7 @@ from datetime import time
 import matplotlib.pyplot as plt
 import plotly as px
 
-#from results_calc import Run_Results_Calculator, Trial_Results_Calculator
+from results_calc import Trial_Results_Calculator
 from acute_med_pathway import AMUModel
 from global_params import G
 
@@ -136,15 +136,19 @@ with st.sidebar:
     if 'amu_open_time' not in st.session_state:
         st.session_state['amu_open_time'] = time(0,0)
     if 'sdec_open_time' not in st.session_state:
-        st.session_state['sdec_open_time'] = time(0,0)
+        #st.session_state['sdec_open_time'] = time(0,0)
+        st.session_state['sdec_open_time'] = G.sdec_open_time
     if 'virtual_open_time' not in st.session_state:
-        st.session_state['virtual_open_time'] = time(0,0)
+        #st.session_state['virtual_open_time'] = time(0,0)
+        st.session_state['virtual_open_time'] = G.virtual_open_time
     if 'amu_close_time' not in st.session_state:
         st.session_state['amu_close_time'] = time(0,0)
     if 'sdec_close_time' not in st.session_state:
-        st.session_state['sdec_close_time'] = time(0,0)
+        #st.session_state['sdec_close_time'] = time(0,0)
+        st.session_state['sdec_close_time'] = G.sdec_close_time
     if 'virtual_close_time' not in st.session_state:
-        st.session_state['virtual_close_time'] = time(0,0)
+        #st.session_state['virtual_close_time'] = time(0,0)
+        st.session_state['virtual_close_time'] = G.virtual_close_time
 
     with col_amu1:
         st.session_state['amu_capacity'] = st.number_input(
@@ -181,7 +185,8 @@ with st.sidebar:
         st.session_state['sdec_open_time'] = st.time_input(
                                                     label="SDEC open time",
                                                     help="!!help text here!!",
-                                                    value=time(0,0),
+                                                    #value=time(0,0),
+                                                    value=G.sdec_open_time,
                                                     step=3600,
                                                     key='time_sdec_open')
 
@@ -189,7 +194,8 @@ with st.sidebar:
         st.session_state['sdec_close_time'] = st.time_input(
                                                     label="SDEC close time",
                                                     help="!!help text here!!",
-                                                    value=time(0,0),
+                                                    #value=time(0,0),
+                                                    value=G.sdec_close_time,
                                                     step=3600,
                                                     key='time_sdec_close')
 
@@ -205,7 +211,8 @@ with st.sidebar:
         st.session_state['virtual_open_time'] = st.time_input(
                                                     label="Virtual open time",
                                                     help="!!help text here!!",
-                                                    value=time(0,0),
+                                                    #value=time(0,0),
+                                                    value=G.virtual_open_time,
                                                     step=3600,
                                                     key='time_virtual_open')
 
@@ -213,19 +220,10 @@ with st.sidebar:
         st.session_state['virtual_close_time'] = st.time_input(
                                                     label="Virtual close time",
                                                     help="!!help text here!!",
-                                                    value=time(0,0),
+                                                    #value=time(0,0),
+                                                    value=G.virtual_close_time,
                                                     step=3600,
                                                     key='time_virtual_close')
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -243,14 +241,8 @@ if st.button("Run simulation"):
 # Spinner appears while model is running
     with st.spinner('Running simulation...'):
 
-# MOVE THIS TO RESULTS CALC?
-
-        # Create a file to store trial results, and write the column headers
-        # 7
-        # with open("trial_results.csv", "w") as f:
-        #     writer = csv.writer(f, delimiter=",")
-        #     column_headers = ["Run", "mean_queue_time_triage"]
-        #     writer.writerow(column_headers)
+        # Create an instance of the Trial_Result_Calculator class
+        my_trial_result_calc = Trial_Results_Calculator()
 
         # For the number of runs specified by the user, create an instance of
         # the AMUModel class, and call its run method
@@ -270,10 +262,23 @@ if st.button("Run simulation"):
                                 st.session_state['virtual_close_time'])
             my_model.run()
 
-        # Once the trial is complete, we'll create an instance of the
-        # Trial_Result_Calculator class and run the print_trial_results method
-        # 8
-        # my_trial_results_calculator = Trial_Results_Calculator()
+            # need to calculate relevant values for the run (ie means) and then
+            # call a trial results calc per run method to append these to a
+            # trial dataframe
+
+            run_df = my_model.run_result_calc.results_df[
+                                            ["Triage Queue Duration",
+                                            "AMU/MAU Queue Duration",
+                                            "SDEC Queue Duration",
+                                            "VW/AHAH Queue Duration"]].copy()
+            run_mean_df = run_df.mean()
+            run_no_for_df = [run + 1]
+            run_mean_df["Run Number"] = run_no_for_df
+
+        st.dataframe(run_mean_df)
+
+
+
         # my_trial_results_calculator.print_trial_results()
                 
         # show results to the screen in a dataframe
@@ -282,43 +287,43 @@ if st.button("Run simulation"):
 
         st.header("Results")
 
-        st.dataframe(my_model.run_result_calc.results_df)
+        #st.dataframe(my_model.run_result_calc.results_df)
+
+        # this isn't working as expected - csv created without button click and clicking then just clears the output
+        #st.button(label="Results to .csv", on_click=my_model.run_result_calc.run_results_to_csv())
 
         tab_wait, tab_util = st.tabs(["Queues", "Utilisation"])
 
         with tab_wait:
             st.header("Queues")
 
-            col_chart, col_data = st.columns(2)
+            describe_df = my_model.run_result_calc.results_df[
+                                        ["Triage Queue Duration",
+                                        "AMU/MAU Queue Duration",
+                                        "SDEC Queue Duration",
+                                        "VW/AHAH Queue Duration"]].copy()
 
-            with col_data:
-                describe_df = my_model.run_result_calc.results_df[
-                                                ["Queue_time_triage",
-                                                "Queue_time_amu",
-                                                "Queue_time_sdec",
-                                                "Queue_time_virtual"]].copy()
+            st.dataframe(describe_df.describe().round(0))
 
-                st.dataframe(describe_df.describe())
+#            mean_values = my_model.run_result_calc.results_df.mean()
+            mean_values = describe_df.mean()
+ 
+            #fig = plt.bar(x=["mean"], y=[mean_values], labels={'x':'data','y':'mean value'},title='Title')
+            fig, ax = plt.subplots()
 
-                st.text(my_model.run_result_calc.calculate_mean_q_time_triage())
+            ax.axhline(y=mean_values["Triage Queue Duration"],
+                                            label='Mean Triage Queue Duration')
 
-            with col_chart:
-                mean_values = my_model.run_result_calc.results_df.mean()
-                #fig = plt.bar(x=["mean"], y=[mean_values], labels={'x':'data','y':'mean value'},title='Title')
-                fig, ax = plt.subplots()
-                ax.axhline(y=mean_values["Queue_time_triage"], label='Mean Value')
-                my_model.run_result_calc.results_df[
-                                    "Queue_time_triage"].plot(kind='bar', ax=ax)
-                ax.set_xlabel('Patient Runs')
-                ax.set_ylabel('Queue Time Triage')
-                # Go up in steps of 25 on the x axis so it's not all
-                # clumped together
-                ax.set_xticks(ax.get_xticks()[::25])
-                ax.legend()
-                #ax.plot(my_model.run_result_calc.results_df.index, my_model.run_result_calc.results_df["Queue_time_triage"])
-                st.pyplot(fig)
-
-                
+            #my_model.run_result_calc.results_df[
+            #                    "Queue_time_triage"].plot(kind='bar', ax=ax)
+            ax.set_xlabel('Patient Runs')
+            ax.set_ylabel('Queue Time Triage')
+            # Go up in steps of 25 on the x axis so it's not all
+            # clumped together
+            ax.set_xticks(ax.get_xticks()[::25])
+            ax.legend()
+            #ax.plot(my_model.run_result_calc.results_df.index, my_model.run_result_calc.results_df["Queue_time_triage"])
+            st.pyplot(fig)
 
 
         with tab_util:
