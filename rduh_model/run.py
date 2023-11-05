@@ -1,9 +1,12 @@
 import csv
 import streamlit as st
 import pandas as pd
-from datetime import time
+from datetime import datetime, time
 import matplotlib.pyplot as plt
 import plotly as px
+from reportlab.pdfgen.canvas import Canvas
+from io import StringIO, BytesIO
+
 
 from results_calc import Trial_Results_Calculator
 from acute_med_pathway import AMUModel
@@ -185,18 +188,16 @@ with st.sidebar:
         st.session_state['sdec_open_time'] = st.time_input(
                                                     label="SDEC open time",
                                                     help="!!help text here!!",
-                                                    #value=time(0,0),
                                                     value=G.sdec_open_time,
-                                                    step=3600,
+                                                    step=900,
                                                     key='time_sdec_open')
 
     with col_sdec3:
         st.session_state['sdec_close_time'] = st.time_input(
                                                     label="SDEC close time",
                                                     help="!!help text here!!",
-                                                    #value=time(0,0),
                                                     value=G.sdec_close_time,
-                                                    step=3600,
+                                                    step=900,
                                                     key='time_sdec_close')
 
     with col_virt1:
@@ -211,18 +212,16 @@ with st.sidebar:
         st.session_state['virtual_open_time'] = st.time_input(
                                                     label="Virtual open time",
                                                     help="!!help text here!!",
-                                                    #value=time(0,0),
                                                     value=G.virtual_open_time,
-                                                    step=3600,
+                                                    step=900,
                                                     key='time_virtual_open')
 
     with col_virt3:
         st.session_state['virtual_close_time'] = st.time_input(
                                                     label="Virtual close time",
                                                     help="!!help text here!!",
-                                                    #value=time(0,0),
                                                     value=G.virtual_close_time,
-                                                    step=3600,
+                                                    step=900,
                                                     key='time_virtual_close')
 
 
@@ -266,16 +265,9 @@ if st.button("Run simulation"):
             # call a trial results calc per run method to append these to a
             # trial dataframe
 
-            run_df = my_model.run_result_calc.results_df[
-                                            ["Triage Queue Duration",
-                                            "AMU/MAU Queue Duration",
-                                            "SDEC Queue Duration",
-                                            "VW/AHAH Queue Duration"]].copy()
-            run_mean_df = run_df.mean()
-            run_no_for_df = [run + 1]
-            run_mean_df["Run Number"] = run_no_for_df
+            run_summary_dict = my_model.run_result_calc.run_summary_results()
 
-        st.dataframe(run_mean_df)
+        st.dataframe(run_summary_dict)
 
 
 
@@ -286,6 +278,25 @@ if st.button("Run simulation"):
         # st.dataframe(my_trial_results_calculator.trial_results_df.describe())
 
         st.header("Results")
+
+# MOVE TO TOP WHEN DONE AND TESTED
+# NEED TO PASS IN DFs AND CHARTS
+        def create_results_pdf():
+            
+            buffer = BytesIO()
+
+            new_file = Canvas(buffer)
+            new_file.drawString(72, 72, "Testing")
+
+            new_file.save()
+            
+            return buffer.getvalue()
+
+        time_string = datetime.now().strftime("%Y%m%d%H%M%S")
+        st.download_button(label="Download results (pdf)",
+                            data=create_results_pdf(),
+                            file_name=f"sim_results_{time_string}",
+                            mime="application/pdf")
 
         #st.dataframe(my_model.run_result_calc.results_df)
 

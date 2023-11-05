@@ -65,11 +65,7 @@ class AMUModel:
 
         self.run_result_calc = Run_Results_Calculator(run_number)
 
-        #print(f"Capacities:- AMU: {self.amu_bed.capacity}, SDEC: {self.sdec_slot.capacity}, AHAH: {self.virtual_slot.capacity}")
 
-
-# THIS WORKS FOR THE ADM COORDINATOR RESOURCE BUT NOT FOR AMU/SDEC/VIRTUAL RESOURCES - WHY?!?!?
-# REPORTS CAPACITY CORRECTLY BUT NOT USERS/COUNT/QUEUE
     def resource_utilisation(self, resource, name):
         while True:
             if self.env.now > self.sim_warm_up_time:
@@ -80,10 +76,11 @@ class AMUModel:
                         resource.count, # number of users using the resource
                         len(resource.queue)) # queue of pending request events
                 self.resource_data.append(item)
-                print(item)
+                #print(item)
                 yield self.env.timeout(10)
             else:
                 yield self.env.timeout(10)
+
 
     def check_day_and_hour(self, current_sim_time):
         
@@ -162,8 +159,6 @@ class AMUModel:
             self.patient_counter +=1
             
             # Create a new patient
-            # pat = Patient(self.patient_counter, G.probability_amu,
-            #                                             G.probability_virtual)
             patient = Patient(self.patient_counter)
 
             # Get the SimPy environment to run the patient_pathway method 
@@ -236,20 +231,12 @@ class AMUModel:
                                 self.sdec_close_time, self.virtual_close_time)
 
 
-# SOMETHING ABOUT THE AMU/SDEC/VIRTUAL ROUTES ISN'T WORKING - PTS ARE NEVER QUEUEING FOR A SLOT, EVEN WHEN CAPACITY SET TO 1
-# PTS ARE SPENDING TIME WITHIN THE SLOT, SO WITH LOW CAPACITIES THERE SHOULD BE SIGNIFICANT QUEUES
-# ALSO SEE resource_utilisation FUNCTION - THESE RESOURCES AREN'T PROPERLY REPORTING UTILISATION STATS
-# ARE THESE RESOURCES RESPECTING THEIR CAPACITIES??
-
-
-
         # AMU route
         if patient.amu_patient is True:
             
             patient.start_queue_amu_bed = self.env.now
 
             #print(f"Patient {patient.id} is waiting for an AMU bed at {self.env.now}")
-            #print(f"Patient {patient.id} is waiting for an AMU bed at {patient.start_queue_amu_bed}")
 
             with self.amu_bed.request() as req:
                 yield req
@@ -257,12 +244,8 @@ class AMUModel:
                 patient.end_queue_amu_bed = self.env.now
                 patient.queue_for_amu_bed = (patient.end_queue_amu_bed -
                                                     patient.start_queue_amu_bed)
-                #print(f"Patient {patient.id} waited {patient.queue_for_amu_bed} "
-                #        "for an AMU bed")
-                #print(f"Patient {patient.id} waited {self.env.now - patient.start_queue_amu_bed} "
-                #        "for an AMU bed")
+                #print(f"Patient {patient.id} waited {patient.queue_for_amu_bed} for an AMU bed")
 
-                #print(f"Patient {patient.id} entered AMU bed at {self.env.now}")
                 #print(f"Patient {patient.id} got an AMU bed at {patient.end_queue_amu_bed}")
 
                 sampled_amu_stay_time = random.expovariate(1.0
@@ -377,14 +360,13 @@ class AMUModel:
         self.env.process(self.generate_patients())
         self.env.process(self.generate_amu_patients())
 
-# see function - this isnt working for AMU/SDEC/Virtual but is for Adm Coord
         # Log resource utilisation
-        self.env.process(self.resource_utilisation(self.adm_coordinator, "Adm Coord"))
+        self.env.process(self.resource_utilisation(
+                                            self.adm_coordinator, "Adm Coord"))
         self.env.process(self.resource_utilisation(self.amu_bed, "AMU bed"))
         self.env.process(self.resource_utilisation(self.sdec_slot, "SDEC slot"))
-        self.env.process(self.resource_utilisation(self.virtual_slot, "Virtual slot"))
-
-        
+        self.env.process(self.resource_utilisation(
+                                            self.virtual_slot, "Virtual slot"))
 
         # Run simulation
         self.env.run(until=self.sim_duration_time)
