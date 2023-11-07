@@ -246,7 +246,7 @@ if st.button("Run simulation"):
         # For the number of runs specified by the user, create an instance of
         # the AMUModel class, and call its run method
         for run in range(st.session_state['simulation_runs']):
-            my_model = AMUModel(run,
+            my_model = AMUModel((run),
                                 st.session_state['sim_duration_time'],
                                 st.session_state['sim_warm_up_time'],
                                 st.session_state['adm_coord_capacity'],
@@ -265,9 +265,12 @@ if st.button("Run simulation"):
             # call a trial results calc per run method to append these to a
             # trial dataframe
 
-            run_summary_dict = my_model.run_result_calc.run_summary_results()
+            run_summary_df = my_model.run_result_calc.run_summary_results()
+            my_trial_result_calc.append_run_results(run_summary_df)
 
-        st.dataframe(run_summary_dict)
+
+        st.dataframe(my_trial_result_calc.trial_results_df)
+        #st.dataframe(run_summary_df)
 
 
 

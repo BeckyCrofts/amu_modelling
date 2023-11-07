@@ -63,7 +63,7 @@ class AMUModel:
                                             capacity = self.virtual_capacity)
 
 
-        self.run_result_calc = Run_Results_Calculator(run_number)
+        self.run_result_calc = Run_Results_Calculator(self.run_number)
 
 
     def resource_utilisation(self, resource, name):
