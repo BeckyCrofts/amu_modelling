@@ -30,7 +30,7 @@ class AMUModel:
         self.resource_data = []
         
         # Setup the values from the default values set
-        self.run_number = run_number
+        self.run_number = run_number + 1
         self.sim_duration_time = sim_duration_time
         self.sim_warm_up_time = int((sim_duration_time / 100) *
                                                             sim_warm_up_time)

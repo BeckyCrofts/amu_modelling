@@ -27,8 +27,7 @@ class Run_Results_Calculator:
         # this will contain aggregated data across the run
         self.summary_results_df = pd.DataFrame()
         
-        self.summary_results_df["Run Number"] = self.run_number
-        self.summary_results_df.set_index("Run Number", inplace=True)
+        self.summary_results_df["Run Number"] = []
 
         self.summary_results_df["Mean Triage Queue"] = []
         self.summary_results_df["Count Triage Timeout"] = []
@@ -39,8 +38,6 @@ class Run_Results_Calculator:
 
         self.summary_results_df["Mean VW/AHAH Queue"] = []
 
-        print(self.summary_results_df)
-
 
     def append_pat_results(self, df_to_add):
 
@@ -50,6 +47,10 @@ class Run_Results_Calculator:
 # take run's results_df and produce a summary df
 # mean of duration columns, sum of timeout column
     def run_summary_results(self):
+
+        self.summary_results_df["Run Number"] = [self.run_number]
+        self.summary_results_df.set_index("Run Number", inplace=True)
+
 
         self.summary_results_df["Mean Triage Queue"] = [self.results_df[
                                             "Triage Queue Duration"].mean()]
@@ -104,6 +105,8 @@ class Trial_Results_Calculator:
     def append_run_results(self, df_to_add):
 
         self.trial_results_df = pd.concat([self.trial_results_df, df_to_add])
+
+    #def trial_summary_results():
 
 # df 
 #   run no  |   tr q mean   |   amu q mean  |   sdec q mean |   vw q mean

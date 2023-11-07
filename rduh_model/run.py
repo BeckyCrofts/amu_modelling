@@ -3,9 +3,15 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, time
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import FigureCanvasPdf
 import plotly as px
 from reportlab.pdfgen.canvas import Canvas
+#from reportlab.lib.pagesizes import letter
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Image
 from io import StringIO, BytesIO
+import tkinter as tk
+from PIL import Image, ImageTk
 
 
 from results_calc import Trial_Results_Calculator
@@ -246,7 +252,7 @@ if st.button("Run simulation"):
         # For the number of runs specified by the user, create an instance of
         # the AMUModel class, and call its run method
         for run in range(st.session_state['simulation_runs']):
-            my_model = AMUModel((run),
+            my_model = AMUModel(run,
                                 st.session_state['sim_duration_time'],
                                 st.session_state['sim_warm_up_time'],
                                 st.session_state['adm_coord_capacity'],
@@ -270,6 +276,7 @@ if st.button("Run simulation"):
 
 
         st.dataframe(my_trial_result_calc.trial_results_df)
+        st.dataframe(my_trial_result_calc.trial_results_df.mean())
         #st.dataframe(run_summary_df)
 
 
@@ -282,22 +289,74 @@ if st.button("Run simulation"):
 
         st.header("Results")
 
-# MOVE TO TOP WHEN DONE AND TESTED
-# NEED TO PASS IN DFs AND CHARTS
-        def create_results_pdf():
-            
+
+
+        def pltfig_to_image(figure):
+
             buffer = BytesIO()
+            figure.savefig(buffer, format='png', dpi=300)
+            buffer.seek(0)
+            x, y = figure.get_size_inches()
+            image = Image(buffer, x * inch, y * inch)
 
-            new_file = Canvas(buffer)
-            new_file.drawString(72, 72, "Testing")
+            return image
 
-            new_file.save()
+        def df_to_table(df):
+
+            table_data = [df.columns] + df.round(0).values.tolist()
             
-            return buffer.getvalue()
+            return Table(table_data)
+
+
+        def create_results_pdf(figure, df):
+            
+            pdf_buffer = BytesIO()
+
+            pdf_doc = SimpleDocTemplate(pdf_buffer)
+
+            pdf_content = [pltfig_to_image(figure),
+                            df_to_table(df)]
+
+            pdf_doc.build(pdf_content)
+            
+            pdf_buffer.seek(0)
+
+            return pdf_buffer.getvalue()
+
+
+
+
+
+
+        describe_df = my_trial_result_calc.trial_results_df.mean()
+
+        st.dataframe(describe_df.round(0))
+#       mean_values = my_model.run_result_calc.results_df.mean()
+        #mean_values = describe_df.mean()
+
+        #fig = plt.bar(x=["mean"], y=[mean_values], labels={'x':'data','y':'mean value'},title='Title')
+        fig, ax = plt.subplots()
+
+        ax.axhline(y=describe_df["Mean Triage Queue"],
+                                        label='Mean Triage Queue')
+        ax.bar(my_trial_result_calc.trial_results_df.index,
+            my_trial_result_calc.trial_results_df["Mean Triage Queue"], label='Mean Triage Queue')
+
+        #my_model.run_result_calc.results_df[
+        #                    "Queue_time_triage"].plot(kind='bar', ax=ax)
+        ax.set_xlabel('Simulation Runs')
+        ax.set_ylabel('Mean Triage Queue')
+        # Go up in steps of 25 on the x axis so it's not all
+        # clumped together
+        ax.set_xticks(my_trial_result_calc.trial_results_df.index)
+        #ax.legend
+
+        #plt.savefig()
+
 
         time_string = datetime.now().strftime("%Y%m%d%H%M%S")
         st.download_button(label="Download results (pdf)",
-                            data=create_results_pdf(),
+                            data=create_results_pdf(fig, my_trial_result_calc.trial_results_df),
                             file_name=f"sim_results_{time_string}",
                             mime="application/pdf")
 
@@ -311,33 +370,17 @@ if st.button("Run simulation"):
         with tab_wait:
             st.header("Queues")
 
-            describe_df = my_model.run_result_calc.results_df[
-                                        ["Triage Queue Duration",
-                                        "AMU/MAU Queue Duration",
-                                        "SDEC Queue Duration",
-                                        "VW/AHAH Queue Duration"]].copy()
+            #describe_df = my_model.run_result_calc.results_df[
+            #                            ["Triage Queue Duration",
+            #                            "AMU/MAU Queue Duration",
+            #                            "SDEC Queue Duration",
+            #                            "VW/AHAH Queue Duration"]].copy()
 
-            st.dataframe(describe_df.describe().round(0))
 
-#            mean_values = my_model.run_result_calc.results_df.mean()
-            mean_values = describe_df.mean()
- 
-            #fig = plt.bar(x=["mean"], y=[mean_values], labels={'x':'data','y':'mean value'},title='Title')
-            fig, ax = plt.subplots()
 
-            ax.axhline(y=mean_values["Triage Queue Duration"],
-                                            label='Mean Triage Queue Duration')
-
-            #my_model.run_result_calc.results_df[
-            #                    "Queue_time_triage"].plot(kind='bar', ax=ax)
-            ax.set_xlabel('Patient Runs')
-            ax.set_ylabel('Queue Time Triage')
-            # Go up in steps of 25 on the x axis so it's not all
-            # clumped together
-            ax.set_xticks(ax.get_xticks()[::25])
-            ax.legend()
             #ax.plot(my_model.run_result_calc.results_df.index, my_model.run_result_calc.results_df["Queue_time_triage"])
             st.pyplot(fig)
+
 
 
         with tab_util:
