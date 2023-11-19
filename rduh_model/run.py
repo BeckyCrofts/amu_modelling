@@ -1,17 +1,20 @@
-import csv
+#import csv
+from datetime import datetime, time
 import streamlit as st
 import pandas as pd
-from datetime import datetime, time
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import FigureCanvasPdf
-import plotly as px
-from reportlab.pdfgen.canvas import Canvas
+#from matplotlib.backends.backend_pdf import FigureCanvasPdf
+#import plotly as px
+#from reportlab.pdfgen.canvas import Canvas
 #from reportlab.lib.pagesizes import letter
+from reportlab.platypus import Frame, SimpleDocTemplate, Table, TableStyle, Paragraph, Image, PageTemplate, PageBreak, NextPageTemplate, BaseDocTemplate
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib import colors
 from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Image
+from reportlab.lib.styles import getSampleStyleSheet
 from io import StringIO, BytesIO
-import tkinter as tk
-from PIL import Image, ImageTk
+#import tkinter as tk
+#from PIL import Image as PILImage, ImageTk
 
 
 from results_calc import Trial_Results_Calculator
@@ -231,9 +234,6 @@ with st.sidebar:
                                                     key='time_virtual_close')
 
 
-
-
-
 # Use main screen to show model output
 st.title('RDUH Acute Medical Pathway Simulation')
 
@@ -275,8 +275,8 @@ if st.button("Run simulation"):
             my_trial_result_calc.append_run_results(run_summary_df)
 
 
-        st.dataframe(my_trial_result_calc.trial_results_df)
-        st.dataframe(my_trial_result_calc.trial_results_df.mean())
+        #st.dataframe(my_trial_result_calc.trial_results_df)
+        #st.dataframe(my_trial_result_calc.trial_results_df.mean())
         #st.dataframe(run_summary_df)
 
 
@@ -285,7 +285,7 @@ if st.button("Run simulation"):
                 
         # show results to the screen in a dataframe
         # print (my_trial_results_calculator.trial_results_df)
-        # st.dataframe(my_trial_results_calculator.trial_results_df.describe())
+        #st.dataframe(my_trial_result_calc.trial_results_df.describe())
 
         st.header("Results")
 
@@ -303,19 +303,60 @@ if st.button("Run simulation"):
 
         def df_to_table(df):
 
-            table_data = [df.columns] + df.round(0).values.tolist()
-            
-            return Table(table_data)
+            return Table(
+                [[Paragraph(col) for col in df.columns]]  + df.round(0).values.tolist(),
+                style=[
+                    ('LINEBELOW',(0,0), (-1,0), 1, colors.black),
+                    ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
+                    ('BOX', (0,0), (-1,-1), 1, colors.black),
+                    ('ROWBACKGROUNDS', (0,0), (-1,-1), [colors.lightgrey, colors.white])
+                    ])
 
+        def model_params():
 
-        def create_results_pdf(figure, df):
+            df_params = pd.DataFrame()
+
+            df_params["Time period simulated (in days)"] = [int(st.session_state['sim_duration_time']/G.DAY_IN_MINS)]
+            df_params["Simulation warm up time (% of simulation time)"] = [st.session_state['sim_warm_up_time']]
+            df_params["Number of Admissions Coordinators / Triage Nurses"] = [st.session_state['adm_coord_capacity']]
+            df_params["AMU/MAU capacity"] = [st.session_state['amu_capacity']]
+            df_params["SDEC capacity"] = [st.session_state['sdec_capacity']]
+            df_params["SDEC open time"] = [st.session_state['sdec_open_time']]
+            df_params["SDEC close time"] = [st.session_state['sdec_close_time']]
+            df_params["Virtual capacity"] = [st.session_state['virtual_capacity']]
+            df_params["Virtual open time"] = [st.session_state['virtual_open_time']]
+            df_params["Virtual close time"] = [st.session_state['virtual_close_time']]
+
+            return Table(
+                    [[Paragraph(col) for col in df_params.columns]] + df_params.values.tolist(),
+                    style=[
+                        ('LINEBELOW',(0,0), (-1,0), 1, colors.black),
+                        ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
+                        ('BOX', (0,0), (-1,-1), 1, colors.black),
+                        ('ROWBACKGROUNDS', (0,0), (-1,-1), [colors.lightgrey, colors.white])
+                        ])
+
+        def create_results_pdf(dttm, figure, df):
             
             pdf_buffer = BytesIO()
 
             pdf_doc = SimpleDocTemplate(pdf_buffer)
 
-            pdf_content = [pltfig_to_image(figure),
-                            df_to_table(df)]
+            styles = getSampleStyleSheet()
+
+# to add:
+# page break between sections
+# page numbers
+            pdf_content = [
+                            Paragraph('RDUH Acute Medical Pathway Simulation', styles['Heading1']),
+                            Paragraph(f"Simulation Results {dttm}", styles['Heading3']),
+                            Paragraph('Queuing Data', styles['Heading2']),
+                            pltfig_to_image(figure),
+                            df_to_table(df),
+                            Paragraph('Utilisation Data', styles['Heading2']),
+                            Paragraph('Model Parameters', styles['Heading2']),
+                            model_params()
+                            ]
 
             pdf_doc.build(pdf_content)
             
@@ -330,11 +371,7 @@ if st.button("Run simulation"):
 
         describe_df = my_trial_result_calc.trial_results_df.mean()
 
-        st.dataframe(describe_df.round(0))
-#       mean_values = my_model.run_result_calc.results_df.mean()
-        #mean_values = describe_df.mean()
-
-        #fig = plt.bar(x=["mean"], y=[mean_values], labels={'x':'data','y':'mean value'},title='Title')
+        plt.style.use('seaborn')
         fig, ax = plt.subplots()
 
         ax.axhline(y=describe_df["Mean Triage Queue"],
@@ -342,43 +379,33 @@ if st.button("Run simulation"):
         ax.bar(my_trial_result_calc.trial_results_df.index,
             my_trial_result_calc.trial_results_df["Mean Triage Queue"], label='Mean Triage Queue')
 
-        #my_model.run_result_calc.results_df[
-        #                    "Queue_time_triage"].plot(kind='bar', ax=ax)
-        ax.set_xlabel('Simulation Runs')
-        ax.set_ylabel('Mean Triage Queue')
+
+        ax.set_xlabel('Simulation run')
+        ax.set_ylabel('Mean queue for triage (minutes)')
         # Go up in steps of 25 on the x axis so it's not all
         # clumped together
         ax.set_xticks(my_trial_result_calc.trial_results_df.index)
-        #ax.legend
-
-        #plt.savefig()
+        ax.legend()
 
 
-        time_string = datetime.now().strftime("%Y%m%d%H%M%S")
+
+        dttm_string = datetime.now().strftime("%Y%m%d%H%M%S")
+        print_dttm = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         st.download_button(label="Download results (pdf)",
-                            data=create_results_pdf(fig, my_trial_result_calc.trial_results_df),
-                            file_name=f"sim_results_{time_string}",
+                            data=create_results_pdf(print_dttm, fig, my_trial_result_calc.trial_results_df),
+                            file_name=f"sim_results_{dttm_string}",
                             mime="application/pdf")
 
         #st.dataframe(my_model.run_result_calc.results_df)
 
-        # this isn't working as expected - csv created without button click and clicking then just clears the output
-        #st.button(label="Results to .csv", on_click=my_model.run_result_calc.run_results_to_csv())
 
         tab_wait, tab_util = st.tabs(["Queues", "Utilisation"])
 
         with tab_wait:
             st.header("Queues")
 
-            #describe_df = my_model.run_result_calc.results_df[
-            #                            ["Triage Queue Duration",
-            #                            "AMU/MAU Queue Duration",
-            #                            "SDEC Queue Duration",
-            #                            "VW/AHAH Queue Duration"]].copy()
+            st.dataframe(describe_df.round(0))
 
-
-
-            #ax.plot(my_model.run_result_calc.results_df.index, my_model.run_result_calc.results_df["Queue_time_triage"])
             st.pyplot(fig)
 
 

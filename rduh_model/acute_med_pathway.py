@@ -72,14 +72,13 @@ class AMUModel:
                 item = (self.env.now,
                         name,
                         resource.capacity,
-                        resource.users, # list of request events currently using the resource
                         resource.count, # number of users using the resource
                         len(resource.queue)) # queue of pending request events
                 self.resource_data.append(item)
                 #print(item)
-                yield self.env.timeout(10)
+                yield self.env.timeout(60)
             else:
-                yield self.env.timeout(10)
+                yield self.env.timeout(60)
 
 
     def check_day_and_hour(self, current_sim_time):
@@ -109,6 +108,9 @@ class AMUModel:
         # else if route_prob >= (1 - P(virtual)) (1 - 0.1 = 0.9) then virtual
         # otherwise SDEC
 
+# all probability values here are made up
+# need to move these values to the global_params class
+# there's probably a better and more elegant way to do this than a big if statement
         if (hour_to_sample >= sdec_open_time.hour
             and hour_to_sample < sdec_close_time.hour
             and hour_to_sample >= virtual_open_time.hour
@@ -123,8 +125,8 @@ class AMUModel:
             and (hour_to_sample < virtual_open_time.hour
                 or hour_to_sample >= virtual_close_time.hour)):
 
-            patient.probability_amu = 0.4
-            patient.probability_sdec = 0.6
+            patient.probability_amu = 0.55
+            patient.probability_sdec = 0.45
             patient.probability_virtual = 0
 
         elif ((hour_to_sample < sdec_open_time.hour
@@ -137,7 +139,6 @@ class AMUModel:
             patient.probability_virtual = 0.4
 
         else:
-
             patient.probability_amu = 1
             patient.probability_sdec = 0
             patient.probability_virtual = 0
