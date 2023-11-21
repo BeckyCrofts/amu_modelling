@@ -290,7 +290,6 @@ if st.button("Run simulation"):
         st.header("Results")
 
 
-
         def pltfig_to_image(figure):
 
             buffer = BytesIO()
@@ -300,6 +299,7 @@ if st.button("Run simulation"):
             image = Image(buffer, x * inch, y * inch)
 
             return image
+
 
         def df_to_table(df):
 
@@ -312,12 +312,28 @@ if st.button("Run simulation"):
                     ('ROWBACKGROUNDS', (0,0), (-1,-1), [colors.lightgrey, colors.white])
                     ])
 
+
+        def sim_setup():
+
+            df_setup = pd.DataFrame()
+
+            df_setup["Time period simulated (in days)"] = [int(st.session_state['sim_duration_time']/G.DAY_IN_MINS)]
+            df_setup["Simulation warm up time (% of simulation time)"] = [st.session_state['sim_warm_up_time']]
+
+            return Table(
+                        [[Paragraph(col) for col in df_setup.columns]] + df_setup.values.tolist(),
+                        style=[
+                            ('LINEBELOW',(0,0), (-1,0), 1, colors.black),
+                            ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
+                            ('BOX', (0,0), (-1,-1), 1, colors.black),
+                            ('ROWBACKGROUNDS', (0,0), (-1,-1), [colors.lightgrey, colors.white])
+                            ])
+
+
         def model_params():
 
             df_params = pd.DataFrame()
 
-            df_params["Time period simulated (in days)"] = [int(st.session_state['sim_duration_time']/G.DAY_IN_MINS)]
-            df_params["Simulation warm up time (% of simulation time)"] = [st.session_state['sim_warm_up_time']]
             df_params["Number of Admissions Coordinators / Triage Nurses"] = [st.session_state['adm_coord_capacity']]
             df_params["AMU/MAU capacity"] = [st.session_state['amu_capacity']]
             df_params["SDEC capacity"] = [st.session_state['sdec_capacity']]
@@ -328,15 +344,16 @@ if st.button("Run simulation"):
             df_params["Virtual close time"] = [st.session_state['virtual_close_time']]
 
             return Table(
-                    [[Paragraph(col) for col in df_params.columns]] + df_params.values.tolist(),
-                    style=[
-                        ('LINEBELOW',(0,0), (-1,0), 1, colors.black),
-                        ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
-                        ('BOX', (0,0), (-1,-1), 1, colors.black),
-                        ('ROWBACKGROUNDS', (0,0), (-1,-1), [colors.lightgrey, colors.white])
-                        ])
+                        [[Paragraph(col) for col in df_params.columns]] + df_params.values.tolist(),
+                        style=[
+                            ('LINEBELOW',(0,0), (-1,0), 1, colors.black),
+                            ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
+                            ('BOX', (0,0), (-1,-1), 1, colors.black),
+                            ('ROWBACKGROUNDS', (0,0), (-1,-1), [colors.lightgrey, colors.white])
+                            ])
 
-        def create_results_pdf(dttm, figure, df):
+
+        def create_results_pdf(dttm, figure_triage_queue, figure_triage_timeout, df):
             
             pdf_buffer = BytesIO()
 
@@ -350,12 +367,14 @@ if st.button("Run simulation"):
             pdf_content = [
                             Paragraph('RDUH Acute Medical Pathway Simulation', styles['Heading1']),
                             Paragraph(f"Simulation Results {dttm}", styles['Heading3']),
+                            Paragraph('Simulation Setup & Model Parameters', styles['Heading2']),
+                            sim_setup(),
+                            model_params(),
                             Paragraph('Queuing Data', styles['Heading2']),
-                            pltfig_to_image(figure),
                             df_to_table(df),
-                            Paragraph('Utilisation Data', styles['Heading2']),
-                            Paragraph('Model Parameters', styles['Heading2']),
-                            model_params()
+                            pltfig_to_image(figure_triage_queue),
+                            pltfig_to_image(figure_triage_timeout),
+                            Paragraph('Utilisation Data', styles['Heading2'])
                             ]
 
             pdf_doc.build(pdf_content)
@@ -368,31 +387,46 @@ if st.button("Run simulation"):
 
 
 
-
         describe_df = my_trial_result_calc.trial_results_df.mean()
+        #pivot_describe_df = pd.pivot(describe_df, )
+        #describe_df.rename(columns={'col1':' '})
 
         plt.style.use('seaborn')
-        fig, ax = plt.subplots()
+        fig_triage_queue, ax = plt.subplots()
+        plt.title("Triage Queues", fontweight="bold")
 
         ax.axhline(y=describe_df["Mean Triage Queue"],
-                                        label='Mean Triage Queue')
+                                        label='Overall mean queue for triage')
         ax.bar(my_trial_result_calc.trial_results_df.index,
-            my_trial_result_calc.trial_results_df["Mean Triage Queue"], label='Mean Triage Queue')
-
-
+            my_trial_result_calc.trial_results_df["Mean Triage Queue"], label='Mean queue for triage (per run)', alpha=0.4)
         ax.set_xlabel('Simulation run')
         ax.set_ylabel('Mean queue for triage (minutes)')
         # Go up in steps of 25 on the x axis so it's not all
         # clumped together
         ax.set_xticks(my_trial_result_calc.trial_results_df.index)
-        ax.legend()
+        ax.legend(loc='lower right')
+
+        plt.style.use('seaborn')
+        fig_triage_timeout, ax = plt.subplots()
+        plt.title("Triage Timeouts", fontweight="bold")
+
+        ax.axhline(y=describe_df["Count Triage Timeout"],
+                                        label='Overall mean triage timeouts')
+        ax.bar(my_trial_result_calc.trial_results_df.index,
+            my_trial_result_calc.trial_results_df["Count Triage Timeout"], label='Mean triage timeouts (per run)', alpha=0.4)
+        ax.set_xlabel('Simulation run')
+        ax.set_ylabel('Mean number of triage timeouts')
+        # Go up in steps of 25 on the x axis so it's not all
+        # clumped together
+        ax.set_xticks(my_trial_result_calc.trial_results_df.index)
+        ax.legend(loc='lower right')
 
 
 
         dttm_string = datetime.now().strftime("%Y%m%d%H%M%S")
         print_dttm = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         st.download_button(label="Download results (pdf)",
-                            data=create_results_pdf(print_dttm, fig, my_trial_result_calc.trial_results_df),
+                            data=create_results_pdf(print_dttm, fig_triage_queue, fig_triage_timeout, my_trial_result_calc.trial_results_df),
                             file_name=f"sim_results_{dttm_string}",
                             mime="application/pdf")
 
@@ -404,10 +438,15 @@ if st.button("Run simulation"):
         with tab_wait:
             st.header("Queues")
 
-            st.dataframe(describe_df.round(0))
+            st.markdown('The results below show the mean values across all runs of the simulation')
 
-            st.pyplot(fig)
+            #st.dataframe(describe_df.round(0).pivot(index="Run Number"))
+            st.dataframe(my_trial_result_calc.trial_results_df.mean().round(0))
+            #print(describe_df.round(0))
+            #print(my_trial_result_calc.trial_results_df.round(0))
 
+            st.pyplot(fig_triage_queue)
+            st.pyplot(fig_triage_timeout)
 
 
         with tab_util:
