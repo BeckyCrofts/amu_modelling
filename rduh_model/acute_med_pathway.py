@@ -117,16 +117,16 @@ class AMUModel:
             and hour_to_sample < virtual_close_time.hour):
 
             patient.probability_amu = 0.2
-            patient.probability_sdec = 0.4
-            patient.probability_virtual = 0.4
+            patient.probability_sdec = 0.5
+            patient.probability_virtual = 0.3
 
         elif (hour_to_sample >= sdec_open_time.hour
             and hour_to_sample < sdec_close_time.hour
             and (hour_to_sample < virtual_open_time.hour
                 or hour_to_sample >= virtual_close_time.hour)):
 
-            patient.probability_amu = 0.55
-            patient.probability_sdec = 0.45
+            patient.probability_amu = 0.5
+            patient.probability_sdec = 0.5
             patient.probability_virtual = 0
 
         elif ((hour_to_sample < sdec_open_time.hour
@@ -134,9 +134,9 @@ class AMUModel:
             and hour_to_sample >= virtual_open_time.hour
             and hour_to_sample < virtual_close_time.hour):
 
-            patient.probability_amu = 0.6
+            patient.probability_amu = 0.7
             patient.probability_sdec = 0
-            patient.probability_virtual = 0.4
+            patient.probability_virtual = 0.3
 
         else:
             patient.probability_amu = 1

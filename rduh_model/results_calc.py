@@ -1,5 +1,5 @@
 import pandas as pd
-import csv
+#import csv
 
 class Run_Results_Calculator:
    
@@ -113,30 +113,3 @@ class Trial_Results_Calculator:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-    # A method to read in the trial results (that we wrote out elsewhere in the
-    # code) and print them for the user
-    def print_trial_results(self):
-        print ("TRIAL RESULTS")
-        print ("-------------")
-        
-        # Read in results from each run into our DataFrame
-        self.trial_results_df = pd.read_csv("trial_results.csv")
-        
-        # Take average over runs
-        trial_mean_q_time_ac = (
-            self.trial_results_df["mean_queue_time_triage"].mean())
-        
-        print ("Mean Queuing Time for Triage Trial:",
-               f"{trial_mean_q_time_ac:.2f}")

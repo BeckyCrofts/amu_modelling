@@ -20,7 +20,7 @@ class G:
     adm_coordinator_capacity = 1 # assumed this for now
     triage_wait_timeout = 60 # made up - how long a pt waits for triage before defaulting to AMU
   
-    patient_interarrival_time = 15 # made up
+    patient_interarrival_time = 30 # made up
     mean_triage_time = 20 # made up
 
     amu_only_interarrival_time = 30 # made up
@@ -39,4 +39,4 @@ class G:
     sim_warm_up_time = DAY_IN_MINS * 2
     sim_warm_up_perc = 10
     sim_duration_time = WEEK_IN_MINS * 2
-    simulation_runs = 1
+    simulation_runs = 5

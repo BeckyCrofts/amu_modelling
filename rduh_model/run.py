@@ -5,16 +5,16 @@ import pandas as pd
 import matplotlib.pyplot as plt
 #from matplotlib.backends.backend_pdf import FigureCanvasPdf
 #import plotly as px
-#from reportlab.pdfgen.canvas import Canvas
+from reportlab.pdfgen.canvas import Canvas
 #from reportlab.lib.pagesizes import letter
 from reportlab.platypus import Frame, SimpleDocTemplate, Table, TableStyle, Paragraph, Image, PageTemplate, PageBreak, NextPageTemplate, BaseDocTemplate
-from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.units import inch
 from reportlab.lib.styles import getSampleStyleSheet
 from io import StringIO, BytesIO
 #import tkinter as tk
-#from PIL import Image as PILImage, ImageTk
+from PIL import Image as PILImage
 
 
 from results_calc import Trial_Results_Calculator
@@ -42,7 +42,7 @@ with st.sidebar:
     st.session_state['simulation_runs'] = st.slider(
                                         label="Number of simulation runs",
                                         help="!!help text here!!",
-                                        min_value=1,
+                                        min_value=5,
                                         max_value=50,
                                         key='slid_sim_runs')
 
@@ -94,7 +94,7 @@ with st.sidebar:
                                     label="Simulation warm up time (as "
                                     "percentage of time period to simulate)",
                                     help="!!help text here!!",
-                                    min_value=5,
+                                    min_value=10,
                                     max_value=50,
                                     value=G.sim_warm_up_perc,
                                     key='slid_sim_warm_up')
@@ -122,6 +122,13 @@ with st.sidebar:
     with st.expander("Click for help"):
         # WRITE HELP TEXT
         st.write("Help text here")
+
+    col_but_east, col_but_north = st.columns(2)
+# placeholders - need to write functions to populate relevent default values
+    with col_but_east:
+        st.button(label="Eastern defaults")
+    with col_but_north:
+        st.button(label="Northern defaults")
 
     if 'adm_coord_capacity' not in st.session_state:
         st.session_state['adm_coord_capacity'] = G.adm_coordinator_capacity
@@ -235,7 +242,16 @@ with st.sidebar:
 
 
 # Use main screen to show model output
-st.title('RDUH Acute Medical Pathway Simulation')
+trust_logo = PILImage.open('images/trust_logo.png')
+diagram = PILImage.open('images/diagram.png')
+st.image(trust_logo, width=300)
+st.title('Acute Medical Pathway Simulation')
+
+
+st.markdown('BLURB ABOUT MODEL HERE')
+
+st.image(diagram, width=700)
+
 
 st.markdown('Please use the sidebar to the left to set up the simulation as '
             'desired and click the \'Run simulation\' button below when done')
@@ -304,7 +320,7 @@ if st.button("Run simulation"):
         def df_to_table(df):
 
             return Table(
-                [[Paragraph(col) for col in df.columns]]  + df.round(0).values.tolist(),
+                [[Paragraph(col) for col in df.columns]]  + df.values.astype(int).tolist(),
                 style=[
                     ('LINEBELOW',(0,0), (-1,0), 1, colors.black),
                     ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
@@ -353,27 +369,46 @@ if st.button("Run simulation"):
                             ])
 
 
+        def on_page(canvas, pdf_doc, pagesize=A4):
+            page_num = canvas.getPageNumber()
+            canvas.drawCentredString(pagesize[0]/2, 50, str(page_num))
+
+
         def create_results_pdf(dttm, figure_triage_queue, figure_triage_timeout, df):
-            
+
+            padding = dict(
+                            leftPadding=72, 
+                            rightPadding=72,
+                            topPadding=72,
+                            bottomPadding=18)
+
+            portrait_frame = Frame(0, 0, *A4, **padding)
+
+            portrait_template = PageTemplate(
+                                            id='portrait',
+                                            frames=portrait_frame,
+                                            onPage=on_page,
+                                            pagesize=A4)
+
             pdf_buffer = BytesIO()
 
-            pdf_doc = SimpleDocTemplate(pdf_buffer)
+            pdf_doc = BaseDocTemplate(pdf_buffer,
+                                        pageTemplates=portrait_template)
 
             styles = getSampleStyleSheet()
 
-# to add:
-# page break between sections
-# page numbers
             pdf_content = [
                             Paragraph('RDUH Acute Medical Pathway Simulation', styles['Heading1']),
                             Paragraph(f"Simulation Results {dttm}", styles['Heading3']),
                             Paragraph('Simulation Setup & Model Parameters', styles['Heading2']),
                             sim_setup(),
                             model_params(),
+                            PageBreak(),
                             Paragraph('Queuing Data', styles['Heading2']),
                             df_to_table(df),
                             pltfig_to_image(figure_triage_queue),
                             pltfig_to_image(figure_triage_timeout),
+                            PageBreak(),
                             Paragraph('Utilisation Data', styles['Heading2'])
                             ]
 
@@ -386,10 +421,10 @@ if st.button("Run simulation"):
 
 
 
-
+        trial_queue_df = my_trial_result_calc.trial_results_df.mean().round(0).to_frame().T
         describe_df = my_trial_result_calc.trial_results_df.mean()
-        #pivot_describe_df = pd.pivot(describe_df, )
-        #describe_df.rename(columns={'col1':' '})
+
+
 
         plt.style.use('seaborn')
         fig_triage_queue, ax = plt.subplots()
@@ -404,7 +439,9 @@ if st.button("Run simulation"):
         # Go up in steps of 25 on the x axis so it's not all
         # clumped together
         ax.set_xticks(my_trial_result_calc.trial_results_df.index)
-        ax.legend(loc='lower right')
+        ax.legend(frameon=True, loc='lower right')
+
+
 
         plt.style.use('seaborn')
         fig_triage_timeout, ax = plt.subplots()
@@ -419,14 +456,36 @@ if st.button("Run simulation"):
         # Go up in steps of 25 on the x axis so it's not all
         # clumped together
         ax.set_xticks(my_trial_result_calc.trial_results_df.index)
-        ax.legend(loc='lower right')
+        ax.legend(frameon=True, loc='lower right')
 
 
+
+        plt.style.use('seaborn')
+        fig_amu_queue, ax = plt.subplots()
+        plt.title("AMU/MAU Queues", fontweight="bold")
+
+        ax.axhline(y=describe_df["Mean AMU/MAU Queue"],
+                                        label='Overall mean queue for AMU/MAU admission')
+        ax.bar(my_trial_result_calc.trial_results_df.index,
+            my_trial_result_calc.trial_results_df["Mean AMU/MAU Queue"], label='Mean queue for AMU/MAU admission (per run)', alpha=0.4)
+        ax.set_xlabel('Simulation run')
+        ax.set_ylabel('Mean number of triage timeouts')
+        # Go up in steps of 25 on the x axis so it's not all
+        # clumped together
+        ax.set_xticks(my_trial_result_calc.trial_results_df.index)
+        ax.legend(frameon=True, loc='lower right')
+
+
+
+
+
+        
 
         dttm_string = datetime.now().strftime("%Y%m%d%H%M%S")
         print_dttm = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         st.download_button(label="Download results (pdf)",
-                            data=create_results_pdf(print_dttm, fig_triage_queue, fig_triage_timeout, my_trial_result_calc.trial_results_df),
+                            data=create_results_pdf(print_dttm, fig_triage_queue, fig_triage_timeout, trial_queue_df),
+                            #data=create_results_pdf(print_dttm, fig_triage_queue, fig_triage_timeout, my_trial_result_calc.trial_results_df),
                             file_name=f"sim_results_{dttm_string}",
                             mime="application/pdf")
 
@@ -438,15 +497,31 @@ if st.button("Run simulation"):
         with tab_wait:
             st.header("Queues")
 
-            st.markdown('The results below show the mean values across all runs of the simulation')
+            #st.markdown('The results below show the mean values across all runs of the simulation')
 
-            #st.dataframe(describe_df.round(0).pivot(index="Run Number"))
-            st.dataframe(my_trial_result_calc.trial_results_df.mean().round(0))
-            #print(describe_df.round(0))
-            #print(my_trial_result_calc.trial_results_df.round(0))
+#RENAME THESE VALUES, EG COUNT TRIAGE TIMEOUT IS A MEAN BY THIS POINT
+            with st.expander("Click for column definitions"):
+                    st.markdown("- **Mean Triage Queue:** An average of all patients waiting for triage across all runs of the simulation. \n"
+                                "- **Count Triage Timeout:** A count of patients who were admitted to the acute medical ward by default after reaching a timeout threshold waiting for triage. This value is averaged across all simulation runs. \n"
+                                "- **Mean AMU/MAU Queue:** An average of all patients waiting for admission to the acute medical ward across all runs of the simulation. \n"
+                                "- **Mean SDEC Queue:** An average of all patients waiting to access the same day emergency care service across all runs of the simulation. \n"
+                                "- **Mean VW/AHAH Queue:** An average of all patients waiting for admission to the virtual ward/acute hospital at home across all runs of the simulation."
+                            )
+
+
+            #st.dataframe(my_trial_result_calc.trial_results_df)
+
+
+            st.dataframe(trial_queue_df, hide_index=True)
+
+
+            st.subheader("Charts")
 
             st.pyplot(fig_triage_queue)
+            st.divider()
             st.pyplot(fig_triage_timeout)
+            st.divider()
+            st.pyplot(fig_amu_queue)
 
 
         with tab_util:
