@@ -1,2 +1,18 @@
 # Becky's work laptop vscode workspace 
 project.code-workspace 
+
+
+# Output file
+trial_results.csv
+
+
+# Jupyter checkpoint files
+.ipynb_checkpoints
+
+
+# Temp Streamlit fiddling
+modular_streamlit/
+
+
+# Some old files we don't need cluttering up the repo
+old/
