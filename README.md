@@ -13,4 +13,6 @@ The models aim is to simulate changes to the parameters to see what difference a
 
 Released under the MIT license.
 
+If you want to clone this repository, run pip install -r requirements.txt to install the required dependencies.
+
 ![Process_Map](https://github.com/BeckyCrofts/amu_modelling/assets/26609637/dd41dcb7-d5bf-466e-8c48-3ff8e21b1fd5)
