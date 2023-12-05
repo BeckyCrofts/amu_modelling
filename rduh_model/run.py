@@ -244,20 +244,35 @@ with st.sidebar:
 # Use main screen to show model output
 trust_logo = PILImage.open('images/trust_logo.png')
 diagram = PILImage.open('images/diagram.png')
-st.image(trust_logo, width=300)
+
+col_blank0, col_blank1, col_logo = st.columns(3)
+
+with col_logo:
+    st.image(trust_logo, width=200)
+
 st.title('Acute Medical Pathway Simulation')
 
+st.markdown(':warning: Please note this model is **under development** and is currently '
+            '**not validated** for real world use.')
 
-st.markdown('BLURB ABOUT MODEL HERE')
+col_explanation, col_diagram = st.columns([0.3, 0.7])
 
-st.image(diagram, width=700)
+with col_explanation:
+    st.markdown('''This simulation allows the user to model the performance of
+                the incoming acute medical pathway. Users can customise
+                certain parameters to test their effect on performance. 
+                Results will appear on the screen when the simulation has
+                completed and will be available to download as a PDF.''')
+
+with col_diagram:
+    st.image(diagram, width=600)
 
 
 st.markdown('Please use the sidebar to the left to set up the simulation as '
             'desired and click the \'Run simulation\' button below when done')
 
 
-if st.button("Run simulation"):
+if st.button("Run simulation", type="primary"):
 
 # Spinner appears while model is running
     with st.spinner('Running simulation...'):
@@ -374,7 +389,9 @@ if st.button("Run simulation"):
             canvas.drawCentredString(pagesize[0]/2, 50, str(page_num))
 
 
-        def create_results_pdf(dttm, figure_triage_queue, figure_triage_timeout, df):
+        def create_results_pdf(dttm, figure_triage_queue, figure_triage_timeout,
+                                figure_amu_mau_queue, figure_sdec_timeout,
+                                figure_vw_ahah_timeout, df):
 
             padding = dict(
                             leftPadding=72, 
@@ -409,6 +426,10 @@ if st.button("Run simulation"):
                             pltfig_to_image(figure_triage_queue),
                             pltfig_to_image(figure_triage_timeout),
                             PageBreak(),
+                            pltfig_to_image(figure_amu_mau_queue),
+                            pltfig_to_image(figure_sdec_timeout),
+                            pltfig_to_image(figure_vw_ahah_timeout),
+                            PageBreak(),
                             Paragraph('Utilisation Data', styles['Heading2'])
                             ]
 
@@ -425,7 +446,7 @@ if st.button("Run simulation"):
         describe_df = my_trial_result_calc.trial_results_df.mean()
 
 
-
+        #  This is the graph for: Mean queue
         plt.style.use('seaborn')
         fig_triage_queue, ax = plt.subplots()
         plt.title("Triage Queues", fontweight="bold")
@@ -442,7 +463,7 @@ if st.button("Run simulation"):
         ax.legend(frameon=True, loc='lower right')
 
 
-
+        # This is the graph for: Triage Timeouts
         plt.style.use('seaborn')
         fig_triage_timeout, ax = plt.subplots()
         plt.title("Triage Timeouts", fontweight="bold")
@@ -459,7 +480,7 @@ if st.button("Run simulation"):
         ax.legend(frameon=True, loc='lower right')
 
 
-
+        # This is the graph for: AMU
         plt.style.use('seaborn')
         fig_amu_queue, ax = plt.subplots()
         plt.title("AMU/MAU Queues", fontweight="bold")
@@ -476,6 +497,38 @@ if st.button("Run simulation"):
         ax.legend(frameon=True, loc='lower right')
 
 
+        # This is the graph for: SDEC
+        plt.style.use('seaborn')
+        fig_sdec_queue, ax = plt.subplots()
+        plt.title("SDEC Queues", fontweight="bold")
+
+        ax.axhline(y=describe_df["Mean SDEC Queue"],
+                                        label='Overall mean queue for SDEC admission')
+        ax.bar(my_trial_result_calc.trial_results_df.index,
+            my_trial_result_calc.trial_results_df["Mean SDEC Queue"], label='Mean queue for SDEC admission (per run)', alpha=0.4)
+        ax.set_xlabel('Simulation run')
+        ax.set_ylabel('Mean queue for SDEC (minutes)')
+        # Go up in steps of 25 on the x axis so it's not all
+        # clumped together
+        ax.set_xticks(my_trial_result_calc.trial_results_df.index)
+        ax.legend(frameon=True, loc='lower right')
+
+
+        # This is the graph for: Virtual
+        plt.style.use('seaborn')
+        fig_vw_ahah_queue, ax = plt.subplots()
+        plt.title("Virtual Queues", fontweight="bold")
+
+        ax.axhline(y=describe_df["Mean VW/AHAH Queue"],
+                                        label='Overall mean queue for VW/AHAH admission')
+        ax.bar(my_trial_result_calc.trial_results_df.index,
+            my_trial_result_calc.trial_results_df["Mean VW/AHAH Queue"], label='Mean queue for Virtual admission (per run)', alpha=0.4)
+        ax.set_xlabel('Simulation run')
+        ax.set_ylabel('Mean queue for Virtual (minutes)')
+        # Go up in steps of 25 on the x axis so it's not all
+        # clumped together
+        ax.set_xticks(my_trial_result_calc.trial_results_df.index)
+        ax.legend(frameon=True, loc='lower right')
 
 
 
@@ -484,7 +537,7 @@ if st.button("Run simulation"):
         dttm_string = datetime.now().strftime("%Y%m%d%H%M%S")
         print_dttm = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         st.download_button(label="Download results (pdf)",
-                            data=create_results_pdf(print_dttm, fig_triage_queue, fig_triage_timeout, trial_queue_df),
+                            data=create_results_pdf(print_dttm, fig_triage_queue, fig_triage_timeout, fig_amu_queue, fig_sdec_queue, fig_vw_ahah_queue, trial_queue_df),
                             #data=create_results_pdf(print_dttm, fig_triage_queue, fig_triage_timeout, my_trial_result_calc.trial_results_df),
                             file_name=f"sim_results_{dttm_string}",
                             mime="application/pdf")
@@ -519,9 +572,17 @@ if st.button("Run simulation"):
 
             st.pyplot(fig_triage_queue)
             st.divider()
+            
             st.pyplot(fig_triage_timeout)
             st.divider()
+            
             st.pyplot(fig_amu_queue)
+            st.divider()
+            
+            st.pyplot(fig_sdec_queue)
+            st.divider()
+            
+            st.pyplot(fig_vw_ahah_queue)
 
 
         with tab_util:
