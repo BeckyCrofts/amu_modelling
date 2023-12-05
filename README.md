@@ -1,7 +1,9 @@
 # amu_modelling
 
 Royal Devon University Healthcare NHS Foundation Trust 
+
 Becky Crofts & Kayleigh Haydock 
+
 
 This is a first draft of a Discrete Event Simulation model using Python to help simulate the acute medical pathway. This involves wards such as the AMU/MAU, Virtual and SDEC wards.
 
