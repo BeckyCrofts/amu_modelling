@@ -32,8 +32,9 @@ with st.sidebar:
     st.header("Simulation setup")
 
     with st.expander("Click for help"):
-        # WRITE HELP TEXT
-        st.write("Help text here")
+        st.write("- **Number of simulation runs:** Select the number of times the simulation should repeat. The results will show the average values across all of these repeats. \n "
+                 "- **Time period to simulate:** Select how long each run of the simulation should go on for. \n "
+                 "- **Simulation warm up time:** This allows patients to populate the model before data starts being recorded. Please leave as default if unsure.")
 
 # Set number of simulation runs
     if 'simulation_runs' not in st.session_state:
@@ -119,9 +120,8 @@ with st.sidebar:
 
     st.header("Model parameters")
 
-    with st.expander("Click for help"):
-        # WRITE HELP TEXT
-        st.write("Help text here")
+#    with st.expander("Click for help"):
+#        st.write("")
 
     col_but_east, col_but_north = st.columns(2)
 # placeholders - need to write functions to populate relevent default values
@@ -570,19 +570,20 @@ if st.button("Run simulation", type="primary"):
 
             st.subheader("Charts")
 
-            st.pyplot(fig_triage_queue)
-            st.divider()
+            col_graph1, col_graph2 = st.columns(2)
+
+            with col_graph1:
+                st.pyplot(fig_triage_queue)
+                st.pyplot(fig_amu_queue)
+                st.pyplot(fig_vw_ahah_queue)
+
             
-            st.pyplot(fig_triage_timeout)
-            st.divider()
+            with col_graph2:
+                st.pyplot(fig_triage_timeout)
+                st.pyplot(fig_sdec_queue)
             
-            st.pyplot(fig_amu_queue)
-            st.divider()
-            
-            st.pyplot(fig_sdec_queue)
-            st.divider()
-            
-            st.pyplot(fig_vw_ahah_queue)
+            #st.divider()
+
 
 
         with tab_util:

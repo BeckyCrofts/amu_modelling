@@ -9,7 +9,7 @@ class G:
     WEEK_IN_MINS = 10080
 
     # all time variables in minutes
-    virtual_capacity = 100 # made up - in reality there may not be a capacity limit
+    virtual_capacity = 40 # made up
     virtual_open_time = time(8,0) # according to intranet
     virtual_close_time = time(20,0) # according to intranet
     amu_capacity = 46
@@ -31,7 +31,7 @@ class G:
     days_of_week = {0: 'week', 1: 'week', 2: 'week', 3: 'week', 4: 'week',
                     5: 'weekend', 6: 'weekend'}
 
-    mean_amu_stay_time = DAY_IN_MINS * 1.5 # 36h - made up
+    mean_amu_stay_time = 954 # average LoS from 01/01-30/06/2023
     #mean_amu_stay_time = DAY_IN_MINS * 4 # 4d - made up
     mean_sdec_stay_time = 240 # 4h - made up
     mean_virtual_stay_time = DAY_IN_MINS * 5 # made up
