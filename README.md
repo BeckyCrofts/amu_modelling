@@ -16,3 +16,11 @@ Released under the MIT license.
 If you want to clone this repository, run pip install -r requirements.txt to install the required dependencies.
 
 ![Process_Map](https://github.com/BeckyCrofts/amu_modelling/assets/26609637/dd41dcb7-d5bf-466e-8c48-3ff8e21b1fd5)
+
+## Future developments:
+- Validate the model by comparing its performance to real-world data
+- Refine the model based on validation findings
+- Implement utilisation data collection, e.g. bed usage
+- Open up more model parameters to user control via Streamlit app
+- Further Streamlit development, e.g. allowing the user to compare model runs with different settings within the same Streamlit session
+- Add sensitivity analysis for user-entered parameter values
