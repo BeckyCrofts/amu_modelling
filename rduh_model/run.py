@@ -3,6 +3,7 @@ from datetime import datetime, time
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.platypus import Frame, SimpleDocTemplate, Table, TableStyle, Paragraph, Image, PageTemplate, PageBreak, NextPageTemplate, BaseDocTemplate
 from reportlab.lib.pagesizes import A4
