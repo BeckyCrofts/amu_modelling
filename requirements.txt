@@ -4,3 +4,4 @@ Pillow
 reportlab
 simpy
 streamlit
+seaborn
