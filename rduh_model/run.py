@@ -238,8 +238,8 @@ with st.sidebar:
 
 
 # Use main screen to show model output
-trust_logo = PILImage.open('images/trust_logo.png')
-diagram = PILImage.open('images/diagram.png')
+trust_logo = PILImage.open('rduh_model/images/trust_logo.png')
+diagram = PILImage.open('rduh_model/images/diagram.png')
 
 col_blank0, col_blank1, col_logo = st.columns(3)
 
