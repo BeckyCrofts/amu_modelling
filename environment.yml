@@ -1,4 +1,4 @@
-name: env_test
+name: sim
 channels:
   - conda-forge
 dependencies:
