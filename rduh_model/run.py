@@ -3,17 +3,13 @@ from datetime import datetime, time
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-#from matplotlib.backends.backend_pdf import FigureCanvasPdf
-#import plotly as px
 from reportlab.pdfgen.canvas import Canvas
-#from reportlab.lib.pagesizes import letter
 from reportlab.platypus import Frame, SimpleDocTemplate, Table, TableStyle, Paragraph, Image, PageTemplate, PageBreak, NextPageTemplate, BaseDocTemplate
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.units import inch
 from reportlab.lib.styles import getSampleStyleSheet
-from io import StringIO, BytesIO
-#import tkinter as tk
+from io import BytesIO
 from PIL import Image as PILImage
 
 
