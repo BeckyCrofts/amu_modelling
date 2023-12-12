@@ -3,7 +3,7 @@ from datetime import datetime, time
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn
+#import seaborn
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.platypus import Frame, SimpleDocTemplate, Table, TableStyle, Paragraph, Image, PageTemplate, PageBreak, NextPageTemplate, BaseDocTemplate
 from reportlab.lib.pagesizes import A4
@@ -444,7 +444,7 @@ if st.button("Run simulation", type="primary"):
 
 
         #  This is the graph for: Mean queue
-        plt.style.use('seaborn')
+        plt.style.use('default')
         fig_triage_queue, ax = plt.subplots()
         plt.title("Triage Queues", fontweight="bold")
 
@@ -461,7 +461,7 @@ if st.button("Run simulation", type="primary"):
 
 
         # This is the graph for: Triage Timeouts
-        plt.style.use('seaborn')
+        plt.style.use('default')
         fig_triage_timeout, ax = plt.subplots()
         plt.title("Triage Timeouts", fontweight="bold")
 
@@ -478,7 +478,7 @@ if st.button("Run simulation", type="primary"):
 
 
         # This is the graph for: AMU
-        plt.style.use('seaborn')
+        plt.style.use('default')
         fig_amu_queue, ax = plt.subplots()
         plt.title("AMU/MAU Queues", fontweight="bold")
 
@@ -495,7 +495,7 @@ if st.button("Run simulation", type="primary"):
 
 
         # This is the graph for: SDEC
-        plt.style.use('seaborn')
+        plt.style.use('default')
         fig_sdec_queue, ax = plt.subplots()
         plt.title("SDEC Queues", fontweight="bold")
 
@@ -512,7 +512,7 @@ if st.button("Run simulation", type="primary"):
 
 
         # This is the graph for: Virtual
-        plt.style.use('seaborn')
+        plt.style.use('default')
         fig_vw_ahah_queue, ax = plt.subplots()
         plt.title("Virtual Queues", fontweight="bold")
 
