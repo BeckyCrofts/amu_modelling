@@ -21,6 +21,7 @@ If you want to clone this repository, run pip install -r requirements.txt to ins
 - Validate the model by comparing its performance to real-world data
 - Refine the model based on validation findings
 - Implement utilisation data collection, e.g. bed usage
+- Improve data outputs and visualisations
 - Open up more model parameters to user control via Streamlit app
 - Further Streamlit development, e.g. allowing the user to compare model runs with different settings within the same Streamlit session
 - Add sensitivity analysis for user-entered parameter values
